@@ -32,7 +32,7 @@ import cats.effect.kernel.{Clock, Temporal}
 
 /** Wrapper that associates a time with a value. */
 case class TimeStamped[+A](time: FiniteDuration, value: A) {
-  def map[B](f: A => B): TimeStamped[B] = copy(value = f(value))
+  def map[B](f:  A => B):                           TimeStamped[B] = copy(value = f(value))
   def mapTime(f: FiniteDuration => FiniteDuration): TimeStamped[A] = copy(time = f(time))
 }
 
@@ -115,7 +115,7 @@ object TimeStamped {
     */
   def rate[A, B: Monoid](
       over: FiniteDuration
-  )(f: A => B): Scan[(Option[FiniteDuration], B), TimeStamped[A], TimeStamped[B]] = {
+  )(f:      A => B): Scan[(Option[FiniteDuration], B), TimeStamped[A], TimeStamped[B]] = {
     val t = withRate(over)(f)
     Scan(t.initial)(
       (s, tsa) => {
@@ -138,7 +138,7 @@ object TimeStamped {
     * @param f function which extracts a feature of `A`
     */
   def withRate[A, B](over: FiniteDuration)(f: A => B)(implicit
-      B: Monoid[B]
+      B:                   Monoid[B]
   ): Scan[(Option[FiniteDuration], B), TimeStamped[A], TimeStamped[Either[B, A]]] =
     Scan[(Option[FiniteDuration], B), TimeStamped[A], TimeStamped[Either[B, A]]](None -> B.empty)(
       { case ((end, acc), tsa) =>
@@ -148,7 +148,7 @@ object TimeStamped {
               (Some(end) -> B.combine(acc, f(tsa.value)), Chunk(tsa.map(Right.apply)))
             else {
               val bldr = List.newBuilder[TimeStamped[Either[B, A]]]
-              var e2 = end
+              var e2   = end
               var acc2 = acc
               while (tsa.time >= e2) {
                 bldr += TimeStamped(e2, Left(acc2))
@@ -158,7 +158,7 @@ object TimeStamped {
               bldr += (tsa.map(Right.apply))
               ((Some(e2), f(tsa.value)), Chunk.seq(bldr.result()))
             }
-          case None => ((Some(tsa.time + over), f(tsa.value)), Chunk(tsa.map(Right.apply)))
+          case None      => ((Some(tsa.time + over), f(tsa.value)), Chunk(tsa.map(Right.apply)))
         }
       },
       {
@@ -186,7 +186,7 @@ object TimeStamped {
     */
   def throttle[F[_]: Temporal, A](
       throttlingFactor: Double,
-      tickResolution: FiniteDuration
+      tickResolution:   FiniteDuration
   ): Pipe[F, TimeStamped[A], TimeStamped[A]] = {
 
     val ticksPerSecond = 1.second.toMillis / tickResolution.toMillis
@@ -203,7 +203,7 @@ object TimeStamped {
 
       def takeUpto(
           chunk: Chunk[TimeStamped[A]],
-          upto: FiniteDuration
+          upto:  FiniteDuration
       ): (Chunk[TimeStamped[A]], Chunk[TimeStamped[A]]) = {
         val toTake = chunk.indexWhere(_.time > upto).getOrElse(chunk.size)
         chunk.splitAt(toTake)
@@ -222,36 +222,35 @@ object TimeStamped {
         }
       }
 
-      def awaitTick(upto: FiniteDuration, pending: Chunk[TimeStamped[A]]): PullFromSourceOrTicks = {
-        (src, ticks) =>
-          if (ticks.head.isEmpty) {
-            ticks.stepLeg.flatMap {
-              case Some(leg) => awaitTick(upto, pending)(src, leg)
-              case None      => Pull.done
-            }
-          } else {
-            val tl = ticks.setHead(ticks.head.drop(1))
-            val newUpto = upto + ((1000 / ticksPerSecond) * throttlingFactor).toLong.millis
-            val (toOutput, stillPending) = takeUpto(pending, newUpto)
-            Pull.output(toOutput) >> {
-              if (stillPending.isEmpty) read(newUpto)(src, tl)
-              else awaitTick(newUpto, stillPending)(src, tl)
-            }
+      def awaitTick(upto: FiniteDuration, pending: Chunk[TimeStamped[A]]): PullFromSourceOrTicks = { (src, ticks) =>
+        if (ticks.head.isEmpty) {
+          ticks.stepLeg.flatMap {
+            case Some(leg) => awaitTick(upto, pending)(src, leg)
+            case None      => Pull.done
           }
+        } else {
+          val tl                       = ticks.setHead(ticks.head.drop(1))
+          val newUpto                  = upto + ((1000 / ticksPerSecond) * throttlingFactor).toLong.millis
+          val (toOutput, stillPending) = takeUpto(pending, newUpto)
+          Pull.output(toOutput) >> {
+            if (stillPending.isEmpty) read(newUpto)(src, tl)
+            else awaitTick(newUpto, stillPending)(src, tl)
+          }
+        }
       }
 
       (src, ticks) =>
         src.pull.stepLeg.flatMap {
           case Some(leg) =>
             val head = leg.head(0)
-            val tl = leg.head.drop(1)
+            val tl   = leg.head.drop(1)
             Pull.output1(head) >>
               ticks.pull.stepLeg.flatMap {
                 case Some(ticksLeg) =>
                   read(head.time)(leg.setHead(tl), ticksLeg)
-                case None => Pull.done
+                case None           => Pull.done
               }
-          case None => Pull.done
+          case None      => Pull.done
         }.stream
     }
 
@@ -330,7 +329,7 @@ object TimeStamped {
 
     def go(
         buffered: SortedMap[FiniteDuration, Chain[TimeStamped[A]]],
-        s: Stream[F, TimeStamped[A]]
+        s:        Stream[F, TimeStamped[A]]
     ): Pull[F, TimeStamped[A], Unit] =
       s.pull.uncons.flatMap {
         case Some((hd, tl)) =>
@@ -340,11 +339,11 @@ object TimeStamped {
           }
           if (all.isEmpty) go(buffered, tl)
           else {
-            val until = all.last._1 - over
+            val until                = all.last._1 - over
             val (toOutput, toBuffer) = all.span { case (x, _) => x <= until }
             outputMapValues(toOutput) >> go(toBuffer, tl)
           }
-        case None =>
+        case None           =>
           outputMapValues(buffered)
       }
 

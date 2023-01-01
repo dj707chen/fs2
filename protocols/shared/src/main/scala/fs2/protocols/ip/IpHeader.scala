@@ -28,8 +28,8 @@ import fs2.protocols.ethernet.{EthernetFrameHeader, EtherType}
 import com.comcast.ip4s.IpAddress
 
 sealed trait IpHeader {
-  def protocol: Int
-  def sourceIp: IpAddress
+  def protocol:      Int
+  def sourceIp:      IpAddress
   def destinationIp: IpAddress
 }
 

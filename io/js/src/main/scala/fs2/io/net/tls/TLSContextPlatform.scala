@@ -38,7 +38,7 @@ private[tls] trait TLSContextCompanionPlatform { self: TLSContext.type =>
 
   private[tls] trait BuilderPlatform[F[_]] {
     def fromSecureContext(context: SecureContext): TLSContext[F]
-    def system: F[TLSContext[F]]
+    def system:   F[TLSContext[F]]
     def insecure: F[TLSContext[F]]
   }
 
@@ -46,7 +46,7 @@ private[tls] trait TLSContextCompanionPlatform { self: TLSContext.type =>
     private[tls] final class AsyncBuilder[F[_]](implicit F: Async[F]) extends UnsealedBuilder[F] {
 
       def fromSecureContext(
-          context: SecureContext,
+          context:  SecureContext,
           insecure: Boolean
       ): TLSContext[F] =
         new UnsealedTLSContext[F] {
@@ -58,10 +58,10 @@ private[tls] trait TLSContextCompanionPlatform { self: TLSContext.type =>
             SocketBuilder(mkSocket(socket, false, _, _))
 
           private def mkSocket(
-              socket: Socket[F],
+              socket:     Socket[F],
               clientMode: Boolean,
-              params: TLSParameters,
-              logger: TLSLogger[F]
+              params:     TLSParameters,
+              logger:     TLSLogger[F]
           ): Resource[F, TLSSocket[F]] = (Dispatcher.sequential[F], Dispatcher.parallel[F])
             .flatMapN { (seqDispatcher, parDispatcher) =>
               if (clientMode) {
@@ -110,9 +110,9 @@ private[tls] trait TLSContextCompanionPlatform { self: TLSContext.type =>
                         tlsSock.once(
                           "secure",
                           { () =>
-                            val requestCert = options.requestCert.getOrElse(false)
+                            val requestCert        = options.requestCert.getOrElse(false)
                             val rejectUnauthorized = options.rejectUnauthorized.getOrElse(true)
-                            val result =
+                            val result             =
                               if (requestCert && rejectUnauthorized)
                                 Option(tlsSock.ssl.verifyError())
                                   .map(e => new JavaScriptSSLException(js.JavaScriptException(e)))

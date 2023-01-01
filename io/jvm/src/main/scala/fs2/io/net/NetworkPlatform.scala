@@ -47,7 +47,7 @@ private[net] trait NetworkPlatform[F[_]] {
     * @param threadFactory factory used to create fixed threads
     */
   def socketGroup(
-      threadCount: Int = 1,
+      threadCount:   Int = 1,
       threadFactory: ThreadFactory = ThreadFactories.named("fs2-tcp", true)
   ): Resource[F, SocketGroup[F]]
 
@@ -67,7 +67,7 @@ private[net] trait NetworkPlatform[F[_]] {
 }
 
 private[net] trait NetworkCompanionPlatform { self: Network.type =>
-  private lazy val globalAcg = AsynchronousChannelGroup.withFixedThreadPool(
+  private lazy val globalAcg  = AsynchronousChannelGroup.withFixedThreadPool(
     1,
     ThreadFactories.named("fs2-global-tcp", true)
   )
@@ -76,7 +76,7 @@ private[net] trait NetworkCompanionPlatform { self: Network.type =>
 
   implicit def forAsync[F[_]](implicit F: Async[F]): Network[F] =
     new UnsealedNetwork[F] {
-      private lazy val globalSocketGroup = SocketGroup.unsafe[F](globalAcg)
+      private lazy val globalSocketGroup         = SocketGroup.unsafe[F](globalAcg)
       private lazy val globalDatagramSocketGroup = DatagramSocketGroup.unsafe[F](globalAdsg)
 
       def socketGroup(threadCount: Int, threadFactory: ThreadFactory): Resource[F, SocketGroup[F]] =
@@ -90,33 +90,31 @@ private[net] trait NetworkCompanionPlatform { self: Network.type =>
 
       def datagramSocketGroup(threadFactory: ThreadFactory): Resource[F, DatagramSocketGroup[F]] =
         Resource
-          .make(F.delay(AsynchronousDatagramSocketGroup.unsafe(threadFactory)))(adsg =>
-            F.delay(adsg.close())
-          )
+          .make(F.delay(AsynchronousDatagramSocketGroup.unsafe(threadFactory)))(adsg => F.delay(adsg.close()))
           .map(DatagramSocketGroup.unsafe[F](_))
 
       def client(
-          to: SocketAddress[Host],
+          to:      SocketAddress[Host],
           options: List[SocketOption]
       ): Resource[F, Socket[F]] = globalSocketGroup.client(to, options)
 
       def server(
           address: Option[Host],
-          port: Option[Port],
+          port:    Option[Port],
           options: List[SocketOption]
       ): Stream[F, Socket[F]] = globalSocketGroup.server(address, port, options)
 
       def serverResource(
           address: Option[Host],
-          port: Option[Port],
+          port:    Option[Port],
           options: List[SocketOption]
       ): Resource[F, (SocketAddress[IpAddress], Stream[F, Socket[F]])] =
         globalSocketGroup.serverResource(address, port, options)
 
       def openDatagramSocket(
-          address: Option[Host],
-          port: Option[Port],
-          options: List[SocketOption],
+          address:        Option[Host],
+          port:           Option[Port],
+          options:        List[SocketOption],
           protocolFamily: Option[ProtocolFamily]
       ): Resource[F, DatagramSocket[F]] =
         globalDatagramSocketGroup.openDatagramSocket(address, port, options, protocolFamily)

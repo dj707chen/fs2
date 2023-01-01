@@ -83,10 +83,10 @@ object TLSContext extends TLSContextCompanionPlatform {
   }
 
   sealed trait SocketBuilder[F[_], S[_[_]]] {
-    def withParameters(params: TLSParameters): SocketBuilder[F, S]
-    def withLogging(log: (=> String) => F[Unit]): SocketBuilder[F, S]
+    def withParameters(params: TLSParameters):          SocketBuilder[F, S]
+    def withLogging(log:       (=> String) => F[Unit]): SocketBuilder[F, S]
     def withoutLogging: SocketBuilder[F, S]
-    def withLogger(logger: TLSLogger[F]): SocketBuilder[F, S]
+    def withLogger(logger:               TLSLogger[F]):              SocketBuilder[F, S]
     private[tls] def withOldLogging(log: Option[String => F[Unit]]): SocketBuilder[F, S]
     def build: Resource[F, S[F]]
   }
@@ -102,23 +102,23 @@ object TLSContext extends TLSContextCompanionPlatform {
 
     private def instance[F[_], S[_[_]]](
         mkSocket: Build[F, S],
-        params: TLSParameters,
-        logger: TLSLogger[F]
+        params:   TLSParameters,
+        logger:   TLSLogger[F]
     ): SocketBuilder[F, S] =
       new SocketBuilder[F, S] {
-        def withParameters(params: TLSParameters): SocketBuilder[F, S] =
+        def withParameters(params: TLSParameters):    SocketBuilder[F, S] =
           instance(mkSocket, params, logger)
         def withLogging(log: (=> String) => F[Unit]): SocketBuilder[F, S] =
           withLogger(TLSLogger.Enabled(log))
-        def withoutLogging: SocketBuilder[F, S] =
+        def withoutLogging:                           SocketBuilder[F, S] =
           withLogger(TLSLogger.Disabled)
-        def withLogger(logger: TLSLogger[F]): SocketBuilder[F, S] =
+        def withLogger(logger: TLSLogger[F]):         SocketBuilder[F, S] =
           instance(mkSocket, params, logger)
         private[tls] def withOldLogging(
             log: Option[String => F[Unit]]
         ): SocketBuilder[F, S] =
           log.map(f => withLogging(m => f(m))).getOrElse(withoutLogging)
-        def build: Resource[F, S[F]] =
+        def build:                                    Resource[F, S[F]]   =
           mkSocket(params, logger)
       }
   }

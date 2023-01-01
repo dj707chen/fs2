@@ -108,7 +108,7 @@ private[file] trait DeprecatedFilesApi[F[_]] { self: Files[F] =>
     )
 
   protected def _runJavaCollectionResource[C <: AutoCloseable](
-      javaCollection: F[C],
+      javaCollection:     F[C],
       collectionIterator: C => Iterator[JPath]
   ): Stream[F, JPath]
 
@@ -139,7 +139,7 @@ private[file] trait DeprecatedFilesApi[F[_]] { self: Files[F] =>
     */
   @deprecated("Use overload which uses fs2.io.file.Path", "3.1.0")
   def isDirectory(
-      path: JPath,
+      path:       JPath,
       linkOption: Seq[LinkOption] = Nil
   ): F[Boolean] =
     Sync[F].delay(
@@ -163,7 +163,7 @@ private[file] trait DeprecatedFilesApi[F[_]] { self: Files[F] =>
     */
   @deprecated("Use isRegularFile which uses fs2.io.file.Path", "3.1.0")
   def isFile(
-      path: JPath,
+      path:       JPath,
       linkOption: Seq[LinkOption] = Nil
   ): F[Boolean] =
     Sync[F].delay(
@@ -241,9 +241,9 @@ private[file] trait DeprecatedFilesApi[F[_]] { self: Files[F] =>
     */
   @deprecated("Use overload which uses fs2.io.file.Path", "3.1.0")
   def tail(
-      path: JPath,
+      path:      JPath,
       chunkSize: Int,
-      offset: Long,
+      offset:    Long,
       pollDelay: FiniteDuration
   ): Stream[F, Byte] =
     tail(Path.fromNioPath(path), chunkSize, offset, pollDelay)
@@ -259,16 +259,16 @@ private[file] trait DeprecatedFilesApi[F[_]] { self: Files[F] =>
     */
   @deprecated("Use overload which uses fs2.io.file.Path", "3.1.0")
   def tempFile(
-      dir: Option[JPath] = None,
-      prefix: String = "",
-      suffix: String = ".tmp",
+      dir:        Option[JPath] = None,
+      prefix:     String = "",
+      suffix:     String = ".tmp",
       attributes: Seq[FileAttribute[_]] = Seq.empty
   ): Resource[F, JPath] =
     Resource.make {
       dir match {
         case Some(dir) =>
           Sync[F].blocking(JFiles.createTempFile(dir, prefix, suffix, attributes: _*))
-        case None =>
+        case None      =>
           Sync[F].blocking(JFiles.createTempFile(prefix, suffix, attributes: _*))
       }
     }(deleteIfExists(_).void)
@@ -283,15 +283,15 @@ private[file] trait DeprecatedFilesApi[F[_]] { self: Files[F] =>
     */
   @deprecated("Use overload which uses fs2.io.file.Path", "3.1.0")
   def tempDirectory(
-      dir: Option[JPath] = None,
-      prefix: String = "",
+      dir:        Option[JPath] = None,
+      prefix:     String = "",
       attributes: Seq[FileAttribute[_]] = Seq.empty
   ): Resource[F, JPath] =
     Resource.make {
       dir match {
         case Some(dir) =>
           Sync[F].blocking(JFiles.createTempDirectory(dir, prefix, attributes: _*))
-        case None =>
+        case None      =>
           Sync[F].blocking(JFiles.createTempDirectory(prefix, attributes: _*))
       }
     } { p =>
@@ -315,9 +315,9 @@ private[file] trait DeprecatedFilesApi[F[_]] { self: Files[F] =>
     */
   @deprecated("Use overload which uses fs2.io.file.Path", "3.1.0")
   def walk(
-      start: JPath,
+      start:    JPath,
       maxDepth: Int,
-      options: Seq[FileVisitOption] = Seq.empty
+      options:  Seq[FileVisitOption] = Seq.empty
   ): Stream[F, JPath] =
     _runJavaCollectionResource[JStream[JPath]](
       Sync[F].blocking(JFiles.walk(start, maxDepth, options: _*)),
@@ -338,9 +338,9 @@ private[file] trait DeprecatedFilesApi[F[_]] { self: Files[F] =>
     */
   @deprecated("Use overload which uses fs2.io.file.Path", "3.1.0")
   def watch(
-      path: JPath,
-      types: Seq[DeprecatedWatcher.EventType] = Nil,
-      modifiers: Seq[WatchEvent.Modifier] = Nil,
+      path:        JPath,
+      types:       Seq[DeprecatedWatcher.EventType] = Nil,
+      modifiers:   Seq[WatchEvent.Modifier] = Nil,
       pollTimeout: FiniteDuration = 1.second
   ): Stream[F, DeprecatedWatcher.Event] =
     Stream
@@ -354,7 +354,7 @@ private[file] trait DeprecatedFilesApi[F[_]] { self: Files[F] =>
     */
   @deprecated("Use overload which uses fs2.io.file.Path", "3.1.0")
   def writeAll(
-      path: JPath,
+      path:  JPath,
       flags: Seq[StandardOpenOption] = List(StandardOpenOption.CREATE)
   ): Pipe[F, Byte, Nothing] =
     writeAll(Path.fromNioPath(path), Flags.fromOpenOptions(StandardOpenOption.WRITE +: flags))
@@ -366,7 +366,7 @@ private[file] trait DeprecatedFilesApi[F[_]] { self: Files[F] =>
     */
   @deprecated("Use overload which uses fs2.io.file.Path", "3.1.0")
   def writeCursor(
-      path: JPath,
+      path:  JPath,
       flags: Seq[OpenOption] = List(StandardOpenOption.CREATE)
   ): Resource[F, WriteCursor[F]] =
     writeCursor(Path.fromNioPath(path), Flags.fromOpenOptions(StandardOpenOption.WRITE +: flags))
@@ -381,8 +381,8 @@ private[file] trait DeprecatedFilesApi[F[_]] { self: Files[F] =>
   @deprecated("Use overload which uses fs2.io.file.Path", "3.1.0")
   def writeRotate(
       computePath: F[JPath],
-      limit: Long,
-      flags: Seq[StandardOpenOption] = List(StandardOpenOption.CREATE)
+      limit:       Long,
+      flags:       Seq[StandardOpenOption] = List(StandardOpenOption.CREATE)
   ): Pipe[F, Byte, Nothing] =
     writeRotate(
       computePath.map(Path.fromNioPath),

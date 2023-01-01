@@ -63,7 +63,7 @@ object hash {
         .evalTap { ctx =>
           F.delay {
             val `type` = EVP_get_digestbyname(digest)
-            if (`type` == null)
+            if (`type`                               == null)
               throw new RuntimeException(s"EVP_get_digestbyname: ${getError()}")
             if (EVP_DigestInit_ex(ctx, `type`, null) != 1)
               throw new RuntimeException(s"EVP_DigestInit_ex: ${getError()}")
@@ -80,7 +80,7 @@ object hash {
             } ++ Stream
             .evalUnChunk {
               F.delay[Chunk[Byte]] {
-                val md = new Array[Byte](EVP_MAX_MD_SIZE)
+                val md   = new Array[Byte](EVP_MAX_MD_SIZE)
                 val size = stackalloc[CUnsignedInt]()
                 if (EVP_DigestFinal_ex(ctx, md.at(0), size) != 1)
                   throw new RuntimeException(s"EVP_DigestFinal_ex: ${getError()}")
@@ -112,15 +112,15 @@ object hash {
 
     def EVP_DigestInit_ex(ctx: Ptr[EVP_MD_CTX], `type`: Ptr[EVP_MD], impl: Ptr[ENGINE]): CInt =
       extern
-    def EVP_DigestUpdate(ctx: Ptr[EVP_MD_CTX], d: Ptr[Byte], cnt: CSize): CInt = extern
-    def EVP_DigestFinal_ex(ctx: Ptr[EVP_MD_CTX], md: Ptr[Byte], s: Ptr[CUnsignedInt]): CInt = extern
+    def EVP_DigestUpdate(ctx:   Ptr[EVP_MD_CTX], d:  Ptr[Byte], cnt: CSize):             CInt = extern
+    def EVP_DigestFinal_ex(ctx: Ptr[EVP_MD_CTX], md: Ptr[Byte], s:   Ptr[CUnsignedInt]): CInt = extern
     def EVP_Digest(
-        data: Ptr[Byte],
-        count: CSize,
-        md: Ptr[Byte],
-        size: Ptr[CUnsignedInt],
+        data:   Ptr[Byte],
+        count:  CSize,
+        md:     Ptr[Byte],
+        size:   Ptr[CUnsignedInt],
         `type`: Ptr[EVP_MD],
-        impl: Ptr[ENGINE]
+        impl:   Ptr[ENGINE]
     ): CInt = extern
   }
 }

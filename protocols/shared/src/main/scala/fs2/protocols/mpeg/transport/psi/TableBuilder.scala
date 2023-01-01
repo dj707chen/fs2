@@ -38,7 +38,7 @@ class TableBuilder private (cases: Map[Int, List[TableSupport[_]]]) {
   def build(gs: GroupedSections[Section]): Either[TableBuildingError, Table] =
     cases.get(gs.tableId) match {
       case None | Some(Nil) => Left(TableBuildingError(gs.tableId, "Unknown table id"))
-      case Some(list) =>
+      case Some(list)       =>
         list.dropRight(1).foldRight[Either[String, _]](list.last.toTable(gs)) { (next, res) =>
           res.fold(_ => next.toTable(gs), Right(_))
         } match {
@@ -62,18 +62,18 @@ object TableBuilder {
 
 trait TableSupport[T <: Table] {
   def tableId: Int
-  def toTable(gs: GroupedSections[Section]): Either[String, T]
-  def toSections(t: T): GroupedSections[Section]
+  def toTable(gs:   GroupedSections[Section]): Either[String, T]
+  def toSections(t: T):                        GroupedSections[Section]
 }
 
 object TableSupport {
 
   def singleton[A <: Section with Table](
-      tableId: Int
+      tableId:   Int
   )(implicit ct: reflect.ClassTag[A]): TableSupport[A] = {
     val tid = tableId
     new TableSupport[A] {
-      def tableId = tid
+      def tableId                               = tid
       def toTable(gs: GroupedSections[Section]) =
         gs.narrow[A].toRight(s"Not a $ct").flatMap { sections =>
           if (sections.tail.isEmpty) Right(sections.head)

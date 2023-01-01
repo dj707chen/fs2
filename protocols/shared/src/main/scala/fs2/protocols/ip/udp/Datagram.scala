@@ -38,14 +38,14 @@ object Datagram {
 
     def encode(dg: Datagram) = for {
       encHeader <- Codec.encode(
-        DatagramHeader(dg.sourcePort, dg.destinationPort, 8 + dg.data.bytes.size.toInt, 0)
-      )
-      chksum = Checksum.checksum(encHeader ++ dg.data)
+                     DatagramHeader(dg.sourcePort, dg.destinationPort, 8 + dg.data.bytes.size.toInt, 0)
+                   )
+      chksum     = Checksum.checksum(encHeader ++ dg.data)
     } yield encHeader.dropRight(16) ++ chksum ++ dg.data
 
     def decode(b: BitVector) = (for {
       header <- Codec[DatagramHeader]
-      data <- bits(8L * (header.length - 8))
+      data   <- bits(8L * (header.length - 8))
     } yield Datagram(header.sourcePort, header.destinationPort, data)).decode(b)
   }
 }

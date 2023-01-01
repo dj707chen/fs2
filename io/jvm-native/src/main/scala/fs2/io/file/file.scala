@@ -35,17 +35,17 @@ import fs2.io.{Watcher => DeprecatedWatcher}
 /** Provides support for working with files. */
 package object file {
 
-  type FileSystemException = java.nio.file.FileSystemException
-  type AccessDeniedException = java.nio.file.AccessDeniedException
+  type FileSystemException        = java.nio.file.FileSystemException
+  type AccessDeniedException      = java.nio.file.AccessDeniedException
   type DirectoryNotEmptyException = java.nio.file.DirectoryNotEmptyException
   type FileAlreadyExistsException = java.nio.file.FileAlreadyExistsException
-  type FileSystemLoopException = java.nio.file.FileSystemLoopException
-  type NoSuchFileException = java.nio.file.NoSuchFileException
-  type NotDirectoryException = java.nio.file.NotDirectoryException
+  type FileSystemLoopException    = java.nio.file.FileSystemLoopException
+  type NoSuchFileException        = java.nio.file.NoSuchFileException
+  type NotDirectoryException      = java.nio.file.NotDirectoryException
 
   @deprecated("Use Files[F].readAll", "3.0.0")
   def readAll[F[_]: Async](
-      path: JPath,
+      path:      JPath,
       chunkSize: Int
   ): Stream[F, Byte] = Files[F].readAll(path, chunkSize)
 
@@ -55,10 +55,10 @@ package object file {
     */
   @deprecated("Use Files[F].readRange", "3.0.0")
   def readRange[F[_]: Async](
-      path: JPath,
+      path:      JPath,
       chunkSize: Int,
-      start: Long,
-      end: Long
+      start:     Long,
+      end:       Long
   ): Stream[F, Byte] = Files[F].readRange(path, chunkSize, start, end)
 
   /** Returns an infinite stream of data from the file at the specified path.
@@ -72,9 +72,9 @@ package object file {
     */
   @deprecated("Use Files[F].tail", "3.0.0")
   def tail[F[_]: Async](
-      path: JPath,
+      path:      JPath,
       chunkSize: Int,
-      offset: Long = 0L,
+      offset:    Long = 0L,
       pollDelay: FiniteDuration = 1.second
   ): Stream[F, Byte] = Files[F].tail(path, chunkSize, offset, pollDelay)
 
@@ -84,7 +84,7 @@ package object file {
     */
   @deprecated("Use Files[F].writeAll", "3.0.0")
   def writeAll[F[_]: Async](
-      path: JPath,
+      path:  JPath,
       flags: Seq[StandardOpenOption] = List(StandardOpenOption.CREATE)
   ): Pipe[F, Byte, Nothing] = Files[F].writeAll(path, flags)
 
@@ -98,9 +98,9 @@ package object file {
   @deprecated("Use Files[F].writeRotate", "3.0.0")
   def writeRotate[F[_]](
       computePath: F[JPath],
-      limit: Long,
-      flags: Seq[StandardOpenOption] = List(StandardOpenOption.CREATE)
-  )(implicit F: Async[F]): Pipe[F, Byte, Nothing] =
+      limit:       Long,
+      flags:       Seq[StandardOpenOption] = List(StandardOpenOption.CREATE)
+  )(implicit F:    Async[F]): Pipe[F, Byte, Nothing] =
     Files[F].writeRotate(computePath, limit, flags)
 
   /** Creates a [[Watcher]] for the default file system.
@@ -118,11 +118,11 @@ package object file {
     */
   @deprecated("Use Files[F].watch", "3.0.0")
   def watch[F[_]](
-      path: JPath,
-      types: Seq[DeprecatedWatcher.EventType] = Nil,
-      modifiers: Seq[WatchEvent.Modifier] = Nil,
+      path:        JPath,
+      types:       Seq[DeprecatedWatcher.EventType] = Nil,
+      modifiers:   Seq[WatchEvent.Modifier] = Nil,
       pollTimeout: FiniteDuration = 1.second
-  )(implicit F: Async[F]): Stream[F, DeprecatedWatcher.Event] =
+  )(implicit F:    Async[F]): Stream[F, DeprecatedWatcher.Event] =
     Files[F].watch(path, types, modifiers, pollTimeout)
 
   /** Checks if a file exists
@@ -134,7 +134,7 @@ package object file {
     */
   @deprecated("Use Files[F].exists", "3.0.0")
   def exists[F[_]: Async](
-      path: JPath,
+      path:  JPath,
       flags: Seq[LinkOption] = Seq.empty
   ): F[Boolean] =
     Files[F].exists(path, flags)
@@ -145,7 +145,7 @@ package object file {
     */
   @deprecated("Use Files[F].permissions", "3.0.0")
   def permissions[F[_]: Async](
-      path: JPath,
+      path:  JPath,
       flags: Seq[LinkOption] = Seq.empty
   ): F[Set[PosixFilePermission]] =
     Files[F].permissions(path, flags)
@@ -156,7 +156,7 @@ package object file {
     */
   @deprecated("Use Files[F].setPermissions", "3.0.0")
   def setPermissions[F[_]: Async](
-      path: JPath,
+      path:        JPath,
       permissions: Set[PosixFilePermission]
   ): F[JPath] =
     Files[F].setPermissions(path, permissions)
@@ -169,7 +169,7 @@ package object file {
   def copy[F[_]: Async](
       source: JPath,
       target: JPath,
-      flags: Seq[CopyOption] = Seq.empty
+      flags:  Seq[CopyOption] = Seq.empty
   ): F[JPath] =
     Files[F].copy(source, target, flags)
 
@@ -192,7 +192,7 @@ package object file {
     */
   @deprecated("Use Files[F].deleteDirectoryRecursively", "3.0.0")
   def deleteDirectoryRecursively[F[_]: Async](
-      path: JPath,
+      path:    JPath,
       options: Set[FileVisitOption] = Set.empty
   ): F[Unit] =
     Files[F].deleteDirectoryRecursively(path, options)
@@ -211,7 +211,7 @@ package object file {
   def move[F[_]: Async](
       source: JPath,
       target: JPath,
-      flags: Seq[CopyOption] = Seq.empty
+      flags:  Seq[CopyOption] = Seq.empty
   ): F[JPath] =
     Files[F].move(source, target, flags)
 
@@ -221,9 +221,9 @@ package object file {
     */
   @deprecated("Use Stream.resource(Files[F].tempFile(..))", "3.0.0")
   def tempFileStream[F[_]: Async](
-      dir: JPath,
-      prefix: String = "",
-      suffix: String = ".tmp",
+      dir:        JPath,
+      prefix:     String = "",
+      suffix:     String = ".tmp",
       attributes: Seq[FileAttribute[_]] = Seq.empty
   ): Stream[F, JPath] =
     Stream.resource(Files[F].tempFile(Some(dir), prefix, suffix, attributes))
@@ -234,9 +234,9 @@ package object file {
     */
   @deprecated("Use Files[F].tempFile", "3.0.0")
   def tempFileResource[F[_]: Async](
-      dir: JPath,
-      prefix: String = "",
-      suffix: String = ".tmp",
+      dir:        JPath,
+      prefix:     String = "",
+      suffix:     String = ".tmp",
       attributes: Seq[FileAttribute[_]] = Seq.empty
   ): Resource[F, JPath] =
     Files[F].tempFile(Some(dir), prefix, suffix, attributes)
@@ -247,8 +247,8 @@ package object file {
     */
   @deprecated("Use Stream.resource(Files[F].tempDirectory(..))", "3.0.0")
   def tempDirectoryStream[F[_]: Async](
-      dir: JPath,
-      prefix: String = "",
+      dir:        JPath,
+      prefix:     String = "",
       attributes: Seq[FileAttribute[_]] = Seq.empty
   ): Stream[F, JPath] =
     Stream.resource(Files[F].tempDirectory(Some(dir), prefix, attributes))
@@ -259,8 +259,8 @@ package object file {
     */
   @deprecated("Use Files[F].tempDirectory", "3.0.0")
   def tempDirectoryResource[F[_]: Async](
-      dir: JPath,
-      prefix: String = "",
+      dir:        JPath,
+      prefix:     String = "",
       attributes: Seq[FileAttribute[_]] = Seq.empty
   ): Resource[F, JPath] =
     Files[F].tempDirectory(Some(dir), prefix, attributes)
@@ -269,7 +269,7 @@ package object file {
     */
   @deprecated("Use Files[F].createDirectory", "3.0.0")
   def createDirectory[F[_]: Async](
-      path: JPath,
+      path:  JPath,
       flags: Seq[FileAttribute[_]] = Seq.empty
   ): F[JPath] =
     Files[F].createDirectory(path, flags)
@@ -278,7 +278,7 @@ package object file {
     */
   @deprecated("Use Files[F].createDirectories", "3.0.0")
   def createDirectories[F[_]: Async](
-      path: JPath,
+      path:  JPath,
       flags: Seq[FileAttribute[_]] = Seq.empty
   ): F[JPath] =
     Files[F].createDirectories(path, flags)
@@ -293,7 +293,7 @@ package object file {
     */
   @deprecated("Use Files[F].directoryStream", "3.0.0")
   def directoryStream[F[_]: Async](
-      path: JPath,
+      path:   JPath,
       filter: JPath => Boolean
   ): Stream[F, JPath] =
     Files[F].directoryStream(path, filter)
@@ -317,7 +317,7 @@ package object file {
     */
   @deprecated("Use Files[F].walk", "3.0.0")
   def walk[F[_]: Async](
-      start: JPath,
+      start:   JPath,
       options: Seq[FileVisitOption]
   ): Stream[F, JPath] =
     Files[F].walk(start, options)
@@ -326,9 +326,9 @@ package object file {
     */
   @deprecated("Use Files[F].walk", "3.0.0")
   def walk[F[_]: Async](
-      start: JPath,
+      start:    JPath,
       maxDepth: Int,
-      options: Seq[FileVisitOption] = Seq.empty
+      options:  Seq[FileVisitOption] = Seq.empty
   ): Stream[F, JPath] =
     Files[F].walk(start, maxDepth, options)
 }

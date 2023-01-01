@@ -39,11 +39,11 @@ import InterruptContext.InterruptionOutcome
   * @param cancelParent  Cancels listening on parent's interrupt.
   */
 final private[fs2] case class InterruptContext[F[_]](
-    deferred: Deferred[F, InterruptionOutcome],
-    ref: Ref[F, Option[InterruptionOutcome]],
+    deferred:      Deferred[F, InterruptionOutcome],
+    ref:           Ref[F, Option[InterruptionOutcome]],
     interruptRoot: Unique.Token,
-    cancelParent: F[Unit]
-)(implicit F: Concurrent[F]) { self =>
+    cancelParent:  F[Unit]
+)(implicit F:      Concurrent[F]) { self =>
 
   private def complete(outcome: InterruptionOutcome): F[Unit] =
     ref.update(_.orElse(Some(outcome))).guarantee(deferred.complete(outcome).void)
@@ -64,7 +64,7 @@ final private[fs2] case class InterruptContext[F[_]](
     */
   def childContext(
       interruptible: Boolean,
-      newScopeId: Unique.Token
+      newScopeId:    Unique.Token
   ): F[InterruptContext[F]] =
     if (interruptible) {
       self.deferred.get.start.flatMap { fiber =>
@@ -73,9 +73,9 @@ final private[fs2] case class InterruptContext[F[_]](
             .flatMap {
               case Outcome.Succeeded(interrupt) =>
                 interrupt.flatMap(i => context.complete(i))
-              case Outcome.Errored(t) =>
+              case Outcome.Errored(t)           =>
                 context.complete(Outcome.Errored(t))
-              case Outcome.Canceled() =>
+              case Outcome.Canceled()           =>
                 context.complete(Outcome.Canceled())
             }
             .start
@@ -87,7 +87,7 @@ final private[fs2] case class InterruptContext[F[_]](
   def eval[A](fa: F[A]): F[Either[InterruptionOutcome, A]] =
     ref.get.flatMap {
       case Some(outcome) => F.pure(Left(outcome))
-      case None =>
+      case None          =>
         F.raceOutcome(deferred.get, fa.attempt).flatMap {
           case Right(oc) =>
             oc.fold(
@@ -95,7 +95,7 @@ final private[fs2] case class InterruptContext[F[_]](
               e => F.raiseError(e),
               x => x.map(_.leftMap(Outcome.Errored(_)))
             )
-          case Left(oc) =>
+          case Left(oc)  =>
             oc.embedNever.map(Left(_))
         }
     }
@@ -106,11 +106,11 @@ private[fs2] object InterruptContext {
   type InterruptionOutcome = Outcome[Id, Throwable, Unique.Token]
 
   def apply[F[_]](
-      newScopeId: Unique.Token,
+      newScopeId:   Unique.Token,
       cancelParent: F[Unit]
-  )(implicit F: Concurrent[F]): F[InterruptContext[F]] =
+  )(implicit F:     Concurrent[F]): F[InterruptContext[F]] =
     for {
-      ref <- F.ref[Option[InterruptionOutcome]](None)
+      ref      <- F.ref[Option[InterruptionOutcome]](None)
       deferred <- F.deferred[InterruptionOutcome]
     } yield InterruptContext[F](
       deferred = deferred,

@@ -46,10 +46,7 @@ import fs2.io.net.tls.TLSContext
   *
   * An instance of `Network` is available for any effect `F` which has an `Async[F]` instance.
   */
-sealed trait Network[F[_]]
-    extends NetworkPlatform[F]
-    with SocketGroup[F]
-    with DatagramSocketGroup[F] {
+sealed trait Network[F[_]] extends NetworkPlatform[F] with SocketGroup[F] with DatagramSocketGroup[F] {
 
   /** Returns a builder for `TLSContext[F]` values.
     *

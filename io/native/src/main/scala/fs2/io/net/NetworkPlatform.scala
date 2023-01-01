@@ -38,19 +38,19 @@ private[net] trait NetworkCompanionPlatform { self: Network.type =>
       private lazy val globalSocketGroup = SocketGroup.unsafe[F](null)
 
       def client(
-          to: SocketAddress[Host],
+          to:      SocketAddress[Host],
           options: List[SocketOption]
       ): Resource[F, Socket[F]] = globalSocketGroup.client(to, options)
 
       def server(
           address: Option[Host],
-          port: Option[Port],
+          port:    Option[Port],
           options: List[SocketOption]
       ): Stream[F, Socket[F]] = globalSocketGroup.server(address, port, options)
 
       def serverResource(
           address: Option[Host],
-          port: Option[Port],
+          port:    Option[Port],
           options: List[SocketOption]
       ): Resource[F, (SocketAddress[IpAddress], Stream[F, Socket[F]])] =
         globalSocketGroup.serverResource(address, port, options)

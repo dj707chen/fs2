@@ -30,10 +30,10 @@ import scodec.codecs._
 import scala.concurrent.duration._
 
 case class InterfaceDescriptionBlock(
-    length: Length,
+    length:   Length,
     linkType: LinkType,
-    snapLen: Long,
-    bytes: ByteVector
+    snapLen:  Long,
+    bytes:    ByteVector
 ) extends BodyBlock {
 
   // Should be extracted from options. Instead, we currently assume

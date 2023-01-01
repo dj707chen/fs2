@@ -61,7 +61,7 @@ trait DatagramSocket[F[_]] extends DatagramSocketPlatform[F] {
     * @param interface network interface upon which to listen for datagrams
     */
   def join(
-      join: MulticastJoin[IpAddress],
+      join:      MulticastJoin[IpAddress],
       interface: DatagramSocket.NetworkInterface
   ): F[GroupMembership]
 

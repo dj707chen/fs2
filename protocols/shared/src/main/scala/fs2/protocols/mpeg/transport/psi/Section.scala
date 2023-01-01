@@ -37,10 +37,10 @@ trait ExtendedSection extends Section {
 }
 
 case class SectionExtension(
-    tableIdExtension: Int,
-    version: Int,
-    current: Boolean,
-    sectionNumber: Int,
+    tableIdExtension:  Int,
+    version:           Int,
+    current:           Boolean,
+    sectionNumber:     Int,
     lastSectionNumber: Int
 )
 

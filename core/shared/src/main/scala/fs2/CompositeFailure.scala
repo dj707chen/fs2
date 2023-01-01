@@ -38,9 +38,9 @@ case class CompositeFailure(
 
 object CompositeFailure {
   def apply(
-      first: Throwable,
+      first:  Throwable,
       second: Throwable,
-      rest: List[Throwable] = List.empty
+      rest:   List[Throwable] = List.empty
   ): CompositeFailure =
     apply(first, NonEmptyList(second, rest))
 
@@ -48,7 +48,7 @@ object CompositeFailure {
     def flattenExceptions(throwable: Throwable): NonEmptyList[Throwable] =
       throwable match {
         case cf: CompositeFailure => cf.all
-        case throwable            => NonEmptyList.one(throwable)
+        case throwable => NonEmptyList.one(throwable)
       }
     first match {
       case cf: CompositeFailure =>
@@ -79,11 +79,11 @@ object CompositeFailure {
     * - When both results succeeds then Right(()) is returned
     */
   def fromResults(
-      first: Either[Throwable, Unit],
+      first:  Either[Throwable, Unit],
       second: Either[Throwable, Unit]
   ): Either[Throwable, Unit] =
     first match {
-      case Right(_) => second
+      case Right(_)  => second
       case Left(err) =>
         Left(second.fold(err1 => apply(err, err1, Nil), _ => err))
     }

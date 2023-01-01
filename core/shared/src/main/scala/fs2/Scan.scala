@@ -42,8 +42,8 @@ import cats.arrow.Strong
   * and collect the resulting `O` values, pairing each `O` with the `A` that was paired with `I`.
   */
 final class Scan[S, -I, +O](
-    val initial: S,
-    private val transform_ : AndThen[(S, I), (S, Chunk[O])],
+    val initial:              S,
+    private val transform_  : AndThen[(S, I), (S, Chunk[O])],
     private val onComplete_ : AndThen[S, Chunk[O]]
 ) {
 
@@ -81,7 +81,7 @@ final class Scan[S, -I, +O](
   def andThen[S2, O2](that: Scan[S2, O, O2]): Scan[(S, S2), I, O2] =
     Scan[(S, S2), I, O2]((initial, that.initial))(
       { case ((s, s2), i) =>
-        val (sp, os) = transform(s, i)
+        val (sp, os)   = transform(s, i)
         val (s2p, out) = that.transformAccumulate(s2, os)
         ((sp, s2p), out)
       },
@@ -191,7 +191,7 @@ final class Scan[S, -I, +O](
     Scan[(S, S2), Either[I, I2], O2]((initial, that.initial))(
       { case ((s, s2), e) =>
         e match {
-          case Left(i) =>
+          case Left(i)   =>
             val (sp, os) = transform(s, i)
             ((sp, s2), os)
           case Right(i2) =>
@@ -207,7 +207,7 @@ final class Scan[S, -I, +O](
     Scan[(S, S2), Either[I, I2], Either[O, O2]]((initial, t.initial))(
       { case ((s, s2), e) =>
         e match {
-          case Left(i) =>
+          case Left(i)   =>
             val (sp, os) = transform(s, i)
             ((sp, s2), os.map(Left(_)))
           case Right(i2) =>
@@ -251,7 +251,7 @@ object Scan {
     }
 
   implicit def strong[S]: Strong[Scan[S, *, *]] = new Strong[Scan[S, *, *]] {
-    def first[A, B, C](fa: Scan[S, A, B]): Scan[S, (A, C), (B, C)] = fa.first
+    def first[A, B, C](fa:  Scan[S, A, B]): Scan[S, (A, C), (B, C)] = fa.first
     def second[A, B, C](fa: Scan[S, A, B]): Scan[S, (C, A), (C, B)] = fa.second
     def dimap[A, B, C, D](fab: Scan[S, A, B])(f: C => A)(g: B => D): Scan[S, C, D] =
       fab.dimap(f)(g)

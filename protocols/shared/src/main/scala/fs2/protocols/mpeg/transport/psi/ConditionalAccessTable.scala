@@ -30,8 +30,8 @@ import scodec.bits._
 import scodec.codecs._
 
 case class ConditionalAccessTable(
-    version: Int,
-    current: Boolean,
+    version:     Int,
+    current:     Boolean,
     descriptors: List[ConditionalAccessDescriptor]
 ) extends Table {
   def tableId = ConditionalAccessSection.TableId
@@ -42,9 +42,9 @@ case class ConditionalAccessTable(
 object ConditionalAccessTable {
 
   def toSections(cat: ConditionalAccessTable): GroupedSections[ConditionalAccessSection] = {
-    val grouped = groupBasedOnSize(cat.descriptors.toVector)
+    val grouped     = groupBasedOnSize(cat.descriptors.toVector)
     val lastSection = grouped.size - 1
-    val sections = grouped.zipWithIndex.map { case (ds, idx) =>
+    val sections    = grouped.zipWithIndex.map { case (ds, idx) =>
       ConditionalAccessSection(
         SectionExtension(65535, cat.version, cat.current, idx, lastSection),
         ds.toList
@@ -66,14 +66,14 @@ object ConditionalAccessTable {
     @annotation.tailrec
     def go(
         remaining: Vector[ConditionalAccessDescriptor],
-        cur: Vector[ConditionalAccessDescriptor],
-        bitsLeft: Long,
-        acc: Vector[Vector[ConditionalAccessDescriptor]]
+        cur:       Vector[ConditionalAccessDescriptor],
+        bitsLeft:  Long,
+        acc:       Vector[Vector[ConditionalAccessDescriptor]]
     ): Vector[Vector[ConditionalAccessDescriptor]] =
       if (remaining.isEmpty) acc :+ cur
       else {
-        val next = remaining.head
-        val bitsNeeded = (6 * 8) + sizeOf(next)
+        val next        = remaining.head
+        val bitsNeeded  = (6 * 8) + sizeOf(next)
         val newBitsLeft = bitsLeft - bitsNeeded
         if (newBitsLeft >= 0) go(remaining.tail, cur :+ next, newBitsLeft, acc)
         else {
@@ -99,7 +99,7 @@ object ConditionalAccessTable {
         version,
         current,
         for {
-          section <- sections.list
+          section    <- sections.list
           descriptor <- section.descriptors
         } yield descriptor
       )
@@ -108,7 +108,7 @@ object ConditionalAccessTable {
 
   implicit val tableSupport: TableSupport[ConditionalAccessTable] =
     new TableSupport[ConditionalAccessTable] {
-      def tableId = ConditionalAccessSection.TableId
+      def tableId                               = ConditionalAccessSection.TableId
       def toTable(gs: GroupedSections[Section]) =
         gs.narrow[ConditionalAccessSection].toRight(s"Not CAT sections").flatMap { sections =>
           fromSections(sections)
@@ -118,7 +118,7 @@ object ConditionalAccessTable {
 }
 
 case class ConditionalAccessSection(
-    extension: SectionExtension,
+    extension:   SectionExtension,
     descriptors: List[ConditionalAccessDescriptor]
 ) extends ExtendedSection {
   def tableId = ConditionalAccessSection.TableId

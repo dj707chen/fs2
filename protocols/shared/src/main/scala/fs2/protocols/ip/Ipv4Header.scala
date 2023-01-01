@@ -34,13 +34,13 @@ import com.comcast.ip4s.Ipv4Address
 
 /** IPv4 header. */
 case class Ipv4Header(
-    dataLength: Int,
-    id: Int,
-    ttl: Int,
-    protocol: Int,
-    sourceIp: Ipv4Address,
+    dataLength:    Int,
+    id:            Int,
+    ttl:           Int,
+    protocol:      Int,
+    sourceIp:      Ipv4Address,
     destinationIp: Ipv4Address,
-    options: BitVector
+    options:       BitVector
 ) extends UnsealedIpHeader
 
 object Ipv4Header {
@@ -76,14 +76,14 @@ object Ipv4Header {
 
       def encode(header: Ipv4Header) = {
         val optionWords = (header.options.size.toInt + 31) / 32
-        val options = header.options.padRight((optionWords * 32).toLong)
+        val options     = header.options.padRight((optionWords * 32).toLong)
         val totalLength = header.dataLength + 20 + (optionWords * 4)
         for {
           encoded <- componentCodec.encode(
-            (5 + optionWords) *: totalLength *: header.id *: header.ttl *: header.protocol *: BitVector
-              .low(16) *: header.sourceIp *: header.destinationIp *: options *: EmptyTuple
-          )
-          chksum = Checksum.checksum(encoded)
+                       (5 + optionWords) *: totalLength *: header.id *: header.ttl *: header.protocol *: BitVector
+                         .low(16) *: header.sourceIp *: header.destinationIp *: options *: EmptyTuple
+                     )
+          chksum   = Checksum.checksum(encoded)
         } yield encoded.patch(80L, chksum)
       }
 

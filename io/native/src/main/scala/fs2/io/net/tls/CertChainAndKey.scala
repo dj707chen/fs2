@@ -34,9 +34,7 @@ import s2nutil._
 final class CertChainAndKey private (chainPem: ByteVector, privateKeyPem: ByteVector) {
   private[tls] def toS2n[F[_]](implicit F: Sync[F]): Resource[F, Ptr[s2n_cert_chain_and_key]] =
     Resource
-      .make(F.delay(guard(s2n_cert_chain_and_key_new())))(ccak =>
-        F.delay(guard_(s2n_cert_chain_and_key_free(ccak)))
-      )
+      .make(F.delay(guard(s2n_cert_chain_and_key_new())))(ccak => F.delay(guard_(s2n_cert_chain_and_key_free(ccak))))
       .evalTap { certChainAndKey =>
         F.delay {
           guard_ {

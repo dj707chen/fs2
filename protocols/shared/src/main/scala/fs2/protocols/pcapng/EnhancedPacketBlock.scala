@@ -28,14 +28,14 @@ import scodec.bits._
 import scodec.codecs._
 
 case class EnhancedPacketBlock(
-    length: Length,
-    interfaceId: Long,
-    timestampHigh: Long,
-    timestampLow: Long,
+    length:               Length,
+    interfaceId:          Long,
+    timestampHigh:        Long,
+    timestampLow:         Long,
     capturedPacketLength: Long,
     originalPacketLength: Long,
-    packetData: ByteVector,
-    options: ByteVector
+    packetData:           ByteVector,
+    options:              ByteVector
 ) extends BodyBlock
 
 object EnhancedPacketBlock {
@@ -59,7 +59,7 @@ object EnhancedPacketBlock {
   // format: on
 
   private def padTo32Bits(length: Int): Long = {
-    val rem = length % 4
+    val rem   = length % 4
     val bytes = if (rem == 0) 0 else 4 - rem
     bytes.toLong * 8
   }

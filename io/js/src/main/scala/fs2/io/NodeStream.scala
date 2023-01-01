@@ -51,7 +51,7 @@ trait Writable extends EventEmitter {
 
   protected[io] def write(
       chunk: js.typedarray.Uint8Array,
-      cb: js.Function1[js.UndefOr[js.Error], Unit]
+      cb:    js.Function1[js.UndefOr[js.Error], Unit]
   ): Boolean = js.native
 
   protected[io] def end(cb: js.Function1[js.UndefOr[js.Error], Unit]): this.type = js.native

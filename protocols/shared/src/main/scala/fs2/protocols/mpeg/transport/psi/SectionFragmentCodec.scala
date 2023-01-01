@@ -31,17 +31,17 @@ import scodec.{Attempt, Codec, Err}
 trait SectionFragmentCodec[A] {
   type Repr
   def tableId: Int
-  def subCodec(header: SectionHeader, verifyCrc: Boolean): Codec[Repr]
-  def toSection(privateBits: BitVector, extension: Option[SectionExtension], data: Repr): Attempt[A]
-  def fromSection(section: A): (BitVector, Option[SectionExtension], Repr)
+  def subCodec(header:       SectionHeader, verifyCrc: Boolean): Codec[Repr]
+  def toSection(privateBits: BitVector, extension:     Option[SectionExtension], data: Repr): Attempt[A]
+  def fromSection(section:   A): (BitVector, Option[SectionExtension], Repr)
 }
 
 object SectionFragmentCodec {
   private val PsiPrivateBits = bin"011"
 
   def psi[A, R: Codec](
-      tableId: Int,
-      toSection: (SectionExtension, R) => A,
+      tableId:     Int,
+      toSection:   (SectionExtension, R) => A,
       fromSection: A => (SectionExtension, R)
   ): SectionFragmentCodec[A] =
     extended[A, R](
@@ -51,12 +51,12 @@ object SectionFragmentCodec {
     )
 
   def extended[A, R](
-      tableId: Int,
-      toSection: (BitVector, SectionExtension, R) => A,
-      fromSection: A => (BitVector, SectionExtension, R)
+      tableId:       Int,
+      toSection:     (BitVector, SectionExtension, R) => A,
+      fromSection:   A => (BitVector, SectionExtension, R)
   )(implicit codecR: Codec[R]): SectionFragmentCodec[A] = {
-    val tid = tableId
-    val build = toSection
+    val tid     = tableId
+    val build   = toSection
     val extract = fromSection
     new SectionFragmentCodec[A] {
       type Repr = R
@@ -67,20 +67,20 @@ object SectionFragmentCodec {
           extension.map(ext => build(privateBits, ext, data)),
           Err("extended section missing expected section extension")
         )
-      def fromSection(section: A) =
+      def fromSection(section: A)                                                            =
         extract(section) match { case (privateBits, ext, data) => (privateBits, Some(ext), data) }
     }
   }
 
   def nonExtended[A, R](
-      tableId: Int,
-      toCodec: SectionHeader => Codec[R],
-      toSection: (BitVector, R) => A,
+      tableId:     Int,
+      toCodec:     SectionHeader => Codec[R],
+      toSection:   (BitVector, R) => A,
       fromSection: A => (BitVector, R)
   ): SectionFragmentCodec[A] = {
-    val tid = tableId
-    val codec = toCodec
-    val build = toSection
+    val tid     = tableId
+    val codec   = toCodec
+    val build   = toSection
     val extract = fromSection
     new SectionFragmentCodec[A] {
       type Repr = R
@@ -88,7 +88,7 @@ object SectionFragmentCodec {
       def subCodec(header: SectionHeader, verifyCrc: Boolean) = codec(header)
       def toSection(privateBits: BitVector, extension: Option[SectionExtension], data: Repr) =
         Attempt.successful(build(privateBits, data))
-      def fromSection(section: A) = {
+      def fromSection(section: A)                                                            = {
         val (privateBits, r) = extract(section)
         (privateBits, None, r)
       }
@@ -96,14 +96,14 @@ object SectionFragmentCodec {
   }
 
   def nonExtendedWithCrc[A, R](
-      tableId: Int,
-      toCodec: (SectionHeader, Boolean) => Codec[R],
-      toSection: (BitVector, R) => A,
+      tableId:     Int,
+      toCodec:     (SectionHeader, Boolean) => Codec[R],
+      toSection:   (BitVector, R) => A,
       fromSection: A => (BitVector, R)
   ): SectionFragmentCodec[A] = {
-    val tid = tableId
-    val codec = toCodec
-    val build = toSection
+    val tid     = tableId
+    val codec   = toCodec
+    val build   = toSection
     val extract = fromSection
     new SectionFragmentCodec[A] {
       type Repr = R
@@ -111,7 +111,7 @@ object SectionFragmentCodec {
       def subCodec(header: SectionHeader, verifyCrc: Boolean) = codec(header, verifyCrc)
       def toSection(privateBits: BitVector, extension: Option[SectionExtension], data: Repr) =
         Attempt.successful(build(privateBits, data))
-      def fromSection(section: A) = {
+      def fromSection(section: A)                                                            = {
         val (privateBits, r) = extract(section)
         (privateBits, None, r)
       }

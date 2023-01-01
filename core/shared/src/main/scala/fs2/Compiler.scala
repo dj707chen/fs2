@@ -23,17 +23,7 @@ package fs2
 
 import cats.{Id, Monad}
 import cats.effect.SyncIO
-import cats.effect.kernel.{
-  Async,
-  CancelScope,
-  Concurrent,
-  MonadCancelThrow,
-  Poll,
-  Ref,
-  Resource,
-  Sync,
-  Unique
-}
+import cats.effect.kernel.{Async, CancelScope, Concurrent, MonadCancelThrow, Poll, Ref, Resource, Sync, Unique}
 import cats.syntax.all._
 
 import fs2.internal._
@@ -60,7 +50,7 @@ import scala.annotation.implicitNotFound
 sealed trait Compiler[F[_], G[_]] {
   private[fs2] val target: Monad[G]
   private[fs2] def apply[O, B](stream: Pull[F, O, Unit], init: B)(
-      fold: (B, Chunk[O]) => B
+      fold:                            (B, Chunk[O]) => B
   ): G[B]
 }
 
@@ -70,8 +60,8 @@ private[fs2] trait CompilerLowPriority2 {
     new Compiler[F, Resource[F, *]] {
       val target: Monad[Resource[F, *]] = implicitly
       def apply[O, B](
-          stream: Pull[F, O, Unit],
-          init: B
+          stream:  Pull[F, O, Unit],
+          init:    B
       )(foldChunk: (B, Chunk[O]) => B): Resource[F, B] =
         Resource
           .makeCase(Scope.newRoot[F])((scope, ec) => scope.close(ec).rethrow)
@@ -88,8 +78,8 @@ private[fs2] trait CompilerLowPriority1 extends CompilerLowPriority2 {
     new Compiler[F, F] {
       val target: Monad[F] = implicitly
       def apply[O, B](
-          stream: Pull[F, O, Unit],
-          init: B
+          stream:  Pull[F, O, Unit],
+          init:    B
       )(foldChunk: (B, Chunk[O]) => B): F[B] = F.compile(stream, init, foldChunk)
     }
 }
@@ -98,8 +88,8 @@ private[fs2] trait CompilerLowPriority0 extends CompilerLowPriority1 {
   implicit val idInstance: Compiler[Id, Id] = new Compiler[Id, Id] {
     val target: Monad[Id] = implicitly
     def apply[O, B](
-        stream: Pull[Id, O, Unit],
-        init: B
+        stream:  Pull[Id, O, Unit],
+        init:    B
     )(foldChunk: (B, Chunk[O]) => B): B =
       Compiler
         .target[SyncIO]
@@ -113,8 +103,8 @@ private[fs2] trait CompilerLowPriority extends CompilerLowPriority0 {
     new Compiler[Fallible, Either[Throwable, *]] {
       val target: Monad[Either[Throwable, *]] = implicitly
       def apply[O, B](
-          stream: Pull[Fallible, O, Unit],
-          init: B
+          stream:  Pull[Fallible, O, Unit],
+          init:    B
       )(foldChunk: (B, Chunk[O]) => B): Either[Throwable, B] =
         Compiler
           .target[SyncIO]
@@ -128,8 +118,8 @@ object Compiler extends CompilerLowPriority {
   implicit val pureInstance: Compiler[Pure, Id] = new Compiler[Pure, Id] {
     val target: Monad[Id] = implicitly
     def apply[O, B](
-        stream: Pull[Pure, O, Unit],
-        init: B
+        stream:  Pull[Pure, O, Unit],
+        init:    B
     )(foldChunk: (B, Chunk[O]) => B): B =
       Compiler
         .target[SyncIO]
@@ -145,27 +135,27 @@ object Compiler extends CompilerLowPriority {
     protected implicit val F: MonadCancelThrow[F]
 
     private[fs2] def unique: F[Unique.Token]
-    private[fs2] def ref[A](a: A): F[Ref[F, A]]
+    private[fs2] def ref[A](a:              A):            F[Ref[F, A]]
     private[fs2] def interruptContext(root: Unique.Token): Option[F[InterruptContext[F]]]
 
     private[fs2] def compile[O, Out](
-        p: Pull[F, O, Unit],
-        init: Out,
+        p:         Pull[F, O, Unit],
+        init:      Out,
         foldChunk: (Out, Chunk[O]) => Out
     ): F[Out] =
       Resource
         .makeCase(Scope.newRoot[F](this))((scope, ec) => scope.close(ec).rethrow)
         .use(scope => Pull.compile[F, O, Out](p, scope, false, init)(foldChunk))
 
-    def pure[A](a: A): F[A] = F.pure(a)
-    def handleErrorWith[A](fa: F[A])(f: Throwable => F[A]): F[A] = F.handleErrorWith(fa)(f)
-    def raiseError[A](e: Throwable): F[A] = F.raiseError(e)
-    def flatMap[A, B](fa: F[A])(f: A => F[B]): F[B] = F.flatMap(fa)(f)
-    def tailRecM[A, B](a: A)(f: A => F[Either[A, B]]): F[B] = F.tailRecM(a)(f)
-    def uncancelable[A](f: Poll[F] => F[A]): F[A] = F.uncancelable(f)
+    def pure[A](a:             A): F[A] = F.pure(a)
+    def handleErrorWith[A](fa: F[A])(f: Throwable => F[A]):    F[A] = F.handleErrorWith(fa)(f)
+    def raiseError[A](e:       Throwable): F[A] = F.raiseError(e)
+    def flatMap[A, B](fa:      F[A])(f: A => F[B]):            F[B] = F.flatMap(fa)(f)
+    def tailRecM[A, B](a:      A)(f:    A => F[Either[A, B]]): F[B] = F.tailRecM(a)(f)
+    def uncancelable[A](f:     Poll[F] => F[A]): F[A] = F.uncancelable(f)
     def canceled: F[Unit] = F.canceled
-    def forceR[A, B](fa: F[A])(fb: F[B]): F[B] = F.forceR(fa)(fb)
-    def onCancel[A](fa: F[A], fin: F[Unit]): F[A] = F.onCancel(fa, fin)
+    def forceR[A, B](fa: F[A])(fb:  F[B]):    F[B] = F.forceR(fa)(fb)
+    def onCancel[A](fa:  F[A], fin: F[Unit]): F[A] = F.onCancel(fa, fin)
     def rootCancelScope: CancelScope = F.rootCancelScope
   }
 
@@ -173,14 +163,14 @@ object Compiler extends CompilerLowPriority {
 
     private final class SyncTarget[F[_]](implicit F0: Sync[F]) extends Target[F] {
       protected implicit val F: MonadCancelThrow[F] = F0
-      private[fs2] def unique: F[Unique.Token] = Sync[F].unique
-      private[fs2] def ref[A](a: A): F[Ref[F, A]] = Ref[F].of(a)
+      private[fs2] def unique:  F[Unique.Token]     = Sync[F].unique
+      private[fs2] def ref[A](a:              A):            F[Ref[F, A]]                   = Ref[F].of(a)
       private[fs2] def interruptContext(root: Unique.Token): Option[F[InterruptContext[F]]] = None
     }
 
     implicit def forSync[F[_]](implicit F: Sync[F]): Target[F] = F match {
       case async: Async[F @unchecked] => Target.forConcurrent(async)
-      case _                          => new SyncTarget
+      case _ => new SyncTarget
     }
 
     private[fs2] def mkSyncTarget[F[_]: Sync]: Target[F] = new SyncTarget
@@ -191,7 +181,7 @@ object Compiler extends CompilerLowPriority {
         protected implicit val F0: Concurrent[F]
     ) extends Target[F] {
       protected implicit val F: MonadCancelThrow[F] = F0
-      private[fs2] def unique: F[Unique.Token] = Concurrent[F].unique
+      private[fs2] def unique:  F[Unique.Token]     = Concurrent[F].unique
       private[fs2] def ref[A](a: A): F[Ref[F, A]] = F0.ref(a)
       private[fs2] def interruptContext(root: Unique.Token): Option[F[InterruptContext[F]]] = Some(
         InterruptContext(root, F.unit)

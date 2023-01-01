@@ -32,25 +32,25 @@ import scodec.codecs._
 
 /** Transport stream packet. */
 case class Packet(
-    header: TransportStreamHeader,
-    adaptationField: Option[AdaptationField],
+    header:           TransportStreamHeader,
+    adaptationField:  Option[AdaptationField],
     payloadUnitStart: Option[Int],
-    payload: Option[BitVector]
+    payload:          Option[BitVector]
 )
 
 object Packet {
 
   def packetize(
-      pid: Pid,
+      pid:                        Pid,
       startingCountinuityCounter: ContinuityCounter,
-      section: BitVector
+      section:                    BitVector
   ): Vector[Packet] = {
     @annotation.tailrec
     def go(
-        first: Boolean,
-        cc: ContinuityCounter,
+        first:     Boolean,
+        cc:        ContinuityCounter,
         remaining: BitVector,
-        acc: Vector[Packet]
+        acc:       Vector[Packet]
     ): Vector[Packet] =
       if (remaining.isEmpty) acc
       else {
@@ -66,9 +66,9 @@ object Packet {
   }
 
   def packetizeMany(
-      pid: Pid,
+      pid:                        Pid,
       startingCountinuityCounter: ContinuityCounter,
-      sections: Vector[BitVector]
+      sections:                   Vector[BitVector]
   ): Vector[Packet] = {
 
     /*
@@ -79,20 +79,20 @@ object Packet {
      *  - the remaining unconsumed sections
      */
     def accumulateN(
-        n: Long,
+        n:        Long,
         sections: Vector[BitVector]
     ): (BitVector, BitVector, Vector[BitVector]) = {
       @annotation.tailrec
       def go(
-          needed: Long,
+          needed:            Long,
           remainingSections: Vector[BitVector],
-          acc: BitVector
+          acc:               BitVector
       ): (BitVector, BitVector, Vector[BitVector]) =
         if (remainingSections.isEmpty) (acc, BitVector.empty, Vector.empty)
         else {
           val (x, rem) = remainingSections.head.splitAt(needed)
-          val newAcc = acc ++ x
-          val left = needed - x.size
+          val newAcc   = acc ++ x
+          val left     = needed - x.size
           if (left == 0) (newAcc, rem, remainingSections.tail)
           else go(left, remainingSections.tail, newAcc)
         }
@@ -101,40 +101,40 @@ object Packet {
 
     @annotation.tailrec
     def go(
-        cc: ContinuityCounter,
-        remaining: BitVector,
+        cc:                ContinuityCounter,
+        remaining:         BitVector,
         remainingSections: Vector[BitVector],
-        acc: Vector[Packet]
+        acc:               Vector[Packet]
     ): Vector[Packet] =
       if (remaining.isEmpty && remainingSections.isEmpty) acc
       else {
         val (packetData, overflow, remSections) =
           accumulateN(184 * 8, remaining +: remainingSections)
-        val payloadUnitStart =
+        val payloadUnitStart                    =
           if (remSections.size < remainingSections.size) Some((remaining.size / 8).toInt)
           else None
-        val (adjPacketData, adjOverflow) =
+        val (adjPacketData, adjOverflow)        =
           if (payloadUnitStart.isDefined)
             (packetData.take(183 * 8), packetData.drop(183 * 8) ++ overflow)
           else (packetData, overflow)
-        val packet = payload(pid, cc, payloadUnitStart, adjPacketData)
+        val packet                              = payload(pid, cc, payloadUnitStart, adjPacketData)
         go(cc.next, adjOverflow, remSections, acc :+ packet)
       }
     go(startingCountinuityCounter, BitVector.empty, sections, Vector.empty)
   }
 
   def payload(
-      pid: Pid,
+      pid:               Pid,
       continuityCounter: ContinuityCounter,
-      payloadUnitStart: Option[Int],
-      payload: BitVector
+      payloadUnitStart:  Option[Int],
+      payload:           BitVector
   ): Packet = {
-    val thisPid = pid
+    val thisPid               = pid
     val thisContinuityCounter = continuityCounter
-    val thisPayloadUnitStart = payloadUnitStart
-    val payloadLength = 8 * (if (payloadUnitStart.isDefined) 183 else 184)
+    val thisPayloadUnitStart  = payloadUnitStart
+    val payloadLength         = 8 * (if (payloadUnitStart.isDefined) 183 else 184)
     require(payload.length <= payloadLength, s"payload too long; must be <= $payloadLength")
-    val thisPayload = payload ++ BitVector.high(payloadLength - payload.length)
+    val thisPayload           = payload ++ BitVector.high(payloadLength - payload.length)
     Packet(
       header = TransportStreamHeader(
         transportErrorIndicator = false,
@@ -167,15 +167,13 @@ object Packet {
     Scan.stateful[Map[Pid, ContinuityCounter], Packet, Either[PidStamped[
       DemultiplexerError.Discontinuity
     ], Packet]](Map.empty) { (state, packet) =>
-      val pid = packet.header.pid
+      val pid                      = packet.header.pid
       val currentContinuityCounter = packet.header.continuityCounter
-      val err = state
+      val err                      = state
         .get(pid)
         .map { lastContinuityCounter =>
           val expectedContinuityCounter =
-            if (
-              packet.header.adaptationFieldControl == 0 || packet.header.adaptationFieldControl == 2
-            ) lastContinuityCounter
+            if (packet.header.adaptationFieldControl == 0 || packet.header.adaptationFieldControl == 2) lastContinuityCounter
             else lastContinuityCounter.next
           if (expectedContinuityCounter == currentContinuityCounter) {
             None
@@ -195,8 +193,8 @@ object Packet {
           }
         }
         .getOrElse(None)
-      val newState = state + (pid -> currentContinuityCounter)
-      val out = err.map(e => Chunk(e, Right(packet))).getOrElse(Chunk.singleton(Right(packet)))
+      val newState                 = state + (pid -> currentContinuityCounter)
+      val out                      = err.map(e => Chunk(e, Right(packet))).getOrElse(Chunk.singleton(Right(packet)))
       (newState, out)
     }
 }

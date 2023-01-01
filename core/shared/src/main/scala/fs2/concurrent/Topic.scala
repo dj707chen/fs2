@@ -133,14 +133,14 @@ abstract class Topic[F[_], A] { self =>
     new Topic[F, B] {
       def publish: Pipe[F, B, Nothing] = sfb => self.publish(sfb.map(g))
       def publish1(b: B): F[Either[Topic.Closed, Unit]] = self.publish1(g(b))
-      def subscribe(maxQueued: Int): Stream[F, B] =
+      def subscribe(maxQueued: Int):      Stream[F, B]                  =
         self.subscribe(maxQueued).map(f)
-      def subscribeAwait(maxQueued: Int): Resource[F, Stream[F, B]] =
+      def subscribeAwait(maxQueued: Int): Resource[F, Stream[F, B]]     =
         self.subscribeAwait(maxQueued).map(_.map(f))
-      def subscribers: Stream[F, Int] = self.subscribers
-      def close: F[Either[Topic.Closed, Unit]] = self.close
-      def isClosed: F[Boolean] = self.isClosed
-      def closed: F[Unit] = self.closed
+      def subscribers:                    Stream[F, Int]                = self.subscribers
+      def close:                          F[Either[Topic.Closed, Unit]] = self.close
+      def isClosed:                       F[Boolean]                    = self.isClosed
+      def closed:                         F[Unit]                       = self.closed
     }
 }
 
@@ -163,7 +163,7 @@ object Topic {
         def publish1(a: A): F[Either[Topic.Closed, Unit]] =
           signalClosure.tryGet.flatMap {
             case Some(_) => Topic.closed.pure[F]
-            case None =>
+            case None    =>
               state.get
                 .flatMap { case (subs, _) => foreach(subs)(_.send(a).void) }
                 .as(Topic.rightUnit)
@@ -200,7 +200,7 @@ object Topic {
 
           Resource.eval(signalClosure.tryGet).flatMap {
             case Some(_) => Resource.pure(Stream.empty)
-            case None =>
+            case None    =>
               Resource
                 .make(subscribe)(unsubscribe)
                 .as(chan.stream)
@@ -234,11 +234,11 @@ object Topic {
             }
             .uncancelable
 
-        def closed: F[Unit] = signalClosure.get
+        def closed:   F[Unit]    = signalClosure.get
         def isClosed: F[Boolean] = signalClosure.tryGet.map(_.isDefined)
       }
     }
 
-  private final val closed: Either[Closed, Unit] = Left(Closed)
+  private final val closed:    Either[Closed, Unit] = Left(Closed)
   private final val rightUnit: Either[Closed, Unit] = Right(())
 }

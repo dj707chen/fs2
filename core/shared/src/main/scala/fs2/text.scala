@@ -111,10 +111,10 @@ object text {
 
          */
 
-        val minIdx = 0.max(bs.length - 3)
-        var idx = bs.length - 1
+        val minIdx  = 0.max(bs.length - 3)
+        var idx     = bs.length - 1
         var counter = 0
-        var res = 0
+        var res     = 0
         while (minIdx <= idx) {
           val c = continuationBytes(bs(idx))
           if (c >= 0) {
@@ -130,8 +130,8 @@ object text {
       }
 
       def processSingleChunk(
-          bldr: Builder[String, List[String]],
-          buffer: Chunk[Byte],
+          bldr:      Builder[String, List[String]],
+          buffer:    Chunk[Byte],
           nextBytes: Chunk[Byte]
       ): Chunk[Byte] = {
         // if processing ASCII or largely ASCII buffer is often empty
@@ -159,7 +159,7 @@ object text {
         s.pull.uncons.flatMap {
           case Some((byteChunks, tail)) =>
             // use local and private mutability here
-            var idx = 0
+            var idx  = 0
             val size = byteChunks.size
             val bldr = List.newBuilder[String]
             var buf1 = buf
@@ -169,15 +169,15 @@ object text {
               idx = idx + 1
             }
             Pull.output(Chunk.seq(bldr.result())) >> doPull(buf1, tail)
-          case None if buf.nonEmpty =>
+          case None if buf.nonEmpty     =>
             Pull.output1(new String(buf.toArray, utf8Charset))
-          case None =>
+          case None                     =>
             Pull.done
         }
 
       def processByteOrderMark(
           buffer: Chunk.Queue[Byte] /* or null which we use as an Optional type to avoid boxing */,
-          s: Stream[F, Chunk[Byte]]
+          s:      Stream[F, Chunk[Byte]]
       ): Pull[F, String, Unit] =
         s.pull.uncons1.flatMap {
           case Some((hd, tl)) =>
@@ -194,7 +194,7 @@ object text {
             } else if (newBuffer.startsWith(Chunk.byteVector(bom.utf8.take(newBuffer.size.toLong))))
               processByteOrderMark(newBuffer, tl)
             else doPull(Chunk.empty, Stream.emits(newBuffer.chunks) ++ tl)
-          case None =>
+          case None           =>
             if (buffer ne null)
               doPull(Chunk.empty, Stream.emits(buffer.chunks))
             else Pull.done
@@ -223,9 +223,9 @@ object text {
   ): Pipe[F, Chunk[Byte], String] = {
 
     def decodeC(
-        decoder: CharsetDecoder,
-        acc: Chunk[Byte],
-        s: Stream[F, Chunk[Byte]],
+        decoder:       CharsetDecoder,
+        acc:           Chunk[Byte],
+        s:             Stream[F, Chunk[Byte]],
         lastOutBuffer: CharBuffer
     ): Pull[F, String, Unit] =
       s.pull.uncons1.flatMap { r =>
@@ -245,7 +245,7 @@ object text {
           else lastOutBuffer
 
         val inBuffer = toDecode.toByteBuffer
-        val result = decoder.decode(inBuffer, out, isLast)
+        val result   = decoder.decode(inBuffer, out, isLast)
         (out: Buffer).flip()
 
         val nextAcc =
@@ -282,7 +282,7 @@ object text {
 
     def flush(
         decoder: CharsetDecoder,
-        out: CharBuffer
+        out:     CharBuffer
     ): Pull[F, String, Unit] = {
       (out: Buffer).clear()
       decoder.flush(out) match {
@@ -292,13 +292,13 @@ object text {
             Pull.output1(out.toString) >> Pull.done
           } else
             Pull.done
-        case res if res.isOverflow =>
+        case res if res.isOverflow  =>
           // Can't find any that output more than two chars. This
           // oughtta do it.
           val newSize = (out.capacity + decoder.maxCharsPerByte * 2).toInt
-          val bigger = CharBuffer.allocate(newSize)
+          val bigger  = CharBuffer.allocate(newSize)
           flush(decoder, bigger)
-        case res =>
+        case res                    =>
           ApplicativeThrow[Pull[F, String, *]].catchNonFatal(res.throwException())
       }
     }
@@ -330,7 +330,7 @@ object text {
       .suspend(Stream.emit(charset.newEncoder()))
       .flatMap { // dispatch over different implementations for performance reasons
         case encoder
-            if charset == StandardCharsets.UTF_8 ||
+            if charset                      == StandardCharsets.UTF_8 ||
               encoder.averageBytesPerChar() == encoder.maxBytesPerChar() =>
           // 1. we know UTF-8 doesn't produce BOMs in encoding
           // 2. maxBytes accounts for BOMs, average doesn't, so if they're equal, the charset encodes no BOM.
@@ -353,7 +353,7 @@ object text {
         .suspend(Stream.emit(charset.newEncoder()))
         .flatMap { // dispatch over different implementations for performance reasons
           case encoder
-              if charset == StandardCharsets.UTF_8 ||
+              if charset                      == StandardCharsets.UTF_8 ||
                 encoder.averageBytesPerChar() == encoder.maxBytesPerChar() =>
             // 1. we know UTF-8 doesn't produce BOMs in encoding
             // 2. maxBytes accounts for BOMs, average doesn't, so if they're equal, the charset encodes no BOM.
@@ -369,19 +369,19 @@ object text {
         }
 
   private def encodeUsingBOMSlicing[F[_]](
-      s: Stream[F, String],
+      s:       Stream[F, String],
       charset: Charset,
-      bom: ByteVector,
-      doDrop: Boolean
+      bom:     ByteVector,
+      doDrop:  Boolean
   ): Pull[F, Chunk[Byte], Unit] =
     s.pull.uncons1.flatMap {
       case Some((hd, tail)) =>
-        val bytes = Chunk.array(hd.getBytes(charset))
+        val bytes   = Chunk.array(hd.getBytes(charset))
         val dropped =
           if (doDrop && bytes.startsWith(Chunk.byteVector(bom))) bytes.drop(bom.length.toInt)
           else bytes
         Pull.output1(dropped) >> encodeUsingBOMSlicing(tail, charset, bom, doDrop = true)
-      case None => Pull.done
+      case None             => Pull.done
     }
 
   private def encodeUsingCharsetEncoder[F[_]](
@@ -389,8 +389,8 @@ object text {
   ): Pipe[F, String, Chunk[Byte]] = {
     def encodeC(
         encoder: CharsetEncoder,
-        acc: Chunk[Char],
-        s: Stream[F, Chunk[Char]]
+        acc:     Chunk[Char],
+        s:       Stream[F, Chunk[Char]]
     ): Pull[F, Chunk[Byte], Unit] =
       s.pull.uncons1.flatMap { r =>
         val toEncode = r match {
@@ -398,7 +398,7 @@ object text {
           case None         => acc
         }
 
-        val isLast = r.isEmpty
+        val isLast        = r.isEmpty
         val outBufferSize =
           math.max(encoder.maxBytesPerChar(), encoder.averageBytesPerChar() * toEncode.size).toInt
 
@@ -428,7 +428,7 @@ object text {
     @tailrec
     def flush(
         encoder: CharsetEncoder,
-        out: ByteBuffer
+        out:     ByteBuffer
     ): Pull[F, Chunk[Byte], Unit] = {
       (out: Buffer).clear()
       encoder.flush(out) match {
@@ -438,11 +438,11 @@ object text {
             Pull.output1(Chunk.ByteBuffer.view(out)) >> Pull.done
           } else
             Pull.done
-        case res if res.isOverflow =>
+        case res if res.isOverflow  =>
           val newSize = (out.capacity + encoder.maxBytesPerChar() * 2).toInt
-          val bigger = ByteBuffer.allocate(newSize)
+          val bigger  = ByteBuffer.allocate(newSize)
           flush(encoder, bigger)
-        case res =>
+        case res                    =>
           ApplicativeThrow[Pull[F, Chunk[Byte], *]].catchNonFatal(res.throwException())
       }
     }
@@ -483,8 +483,8 @@ object text {
   ): Pipe[F, String, String] = {
     def fillBuffers(
         stringBuilder: StringBuilder,
-        linesBuffer: ArrayBuffer[String],
-        string: String
+        linesBuffer:   ArrayBuffer[String],
+        string:        String
     ): Unit = {
       val l = stringBuilder.length
 
@@ -515,7 +515,7 @@ object text {
           case '\r' if i + 1 < string.size =>
             linesBuffer += stringBuilder.result()
             stringBuilder.clear()
-          case other =>
+          case other                       =>
             stringBuilder.append(other)
         }
         i += 1
@@ -523,12 +523,12 @@ object text {
     }
 
     def go(
-        stream: Stream[F, String],
+        stream:        Stream[F, String],
         stringBuilder: StringBuilder,
-        first: Boolean
+        first:         Boolean
     ): Pull[F, String, Unit] =
       stream.pull.uncons.flatMap {
-        case None =>
+        case None                  =>
           if (first) Pull.done
           else {
             val result = stringBuilder.result()
@@ -552,7 +552,7 @@ object text {
               Pull.raiseError[F](
                 new LineTooLongException(stringBuilder.length, max)
               )(raiseThrowable)
-            case _ =>
+            case _                                                         =>
               Pull.output(Chunk.indexedSeq(linesBuffer)) >> go(stream, stringBuilder, first = false)
           }
       }
@@ -587,25 +587,25 @@ object text {
     ): Pipe[F, String, Byte] = {
       // Adapted from scodec-bits, licensed under 3-clause BSD
       final case class State(buffer: Int, mod: Int, padding: Int)
-      val Pad = alphabet.pad
+      val Pad          = alphabet.pad
       def paddingError =
         Left(
           "Malformed padding - final quantum may optionally be padded with one or two padding characters such that the quantum is completed"
         )
 
       def decode(state: State, str: String): Either[String, (State, Chunk[Byte])] = {
-        var buffer = state.buffer
-        var mod = state.mod
-        var padding = state.padding
-        var idx, bidx = 0
-        val acc = new Array[Byte]((str.size + 3) / 4 * 3)
+        var buffer          = state.buffer
+        var mod             = state.mod
+        var padding         = state.padding
+        var idx, bidx       = 0
+        val acc             = new Array[Byte]((str.size + 3) / 4 * 3)
         while (idx < str.length) {
           str(idx) match {
             case c if alphabet.ignore(c) => // ignore
-            case c =>
+            case c                       =>
               val cidx =
                 if (padding == 0)
-                  if (c == Pad)
+                  if (c    == Pad)
                     if (mod == 2 || mod == 3) {
                       padding += 1
                       0
@@ -628,13 +628,13 @@ object text {
                     s"Unexpected character '$c' at index $idx after padding character; only '=' and whitespace characters allowed after first padding character"
                   )
               mod match {
-                case 0 =>
+                case 0     =>
                   buffer = cidx & 0x3f
                   mod += 1
                 case 1 | 2 =>
                   buffer = (buffer << 6) | (cidx & 0x3f)
                   mod += 1
-                case 3 =>
+                case 3     =>
                   buffer = (buffer << 6) | (cidx & 0x3f)
                   mod = 0
                   acc(bidx) = (buffer >> 16).toByte
@@ -646,8 +646,8 @@ object text {
           idx += 1
         }
         val paddingInBuffer = if (mod == 0) padding else 0
-        val out = Chunk.byteVector(ByteVector.view(acc).take((bidx - paddingInBuffer).toLong))
-        val carry = State(buffer, mod, padding)
+        val out             = Chunk.byteVector(ByteVector.view(acc).take((bidx - paddingInBuffer).toLong))
+        val carry           = State(buffer, mod, padding)
         Right((carry, out))
       }
 
@@ -675,9 +675,9 @@ object text {
             decode(state, hd) match {
               case Right((newState, out)) =>
                 Pull.output(out) >> go(newState, tl)
-              case Left(err) => Pull.raiseError(new IllegalArgumentException(err))
+              case Left(err)              => Pull.raiseError(new IllegalArgumentException(err))
             }
-          case None =>
+          case None           =>
             finish(state) match {
               case Right(out) => Pull.output(out)
               case Left(err)  => Pull.raiseError(new IllegalArgumentException(err))
@@ -700,20 +700,20 @@ object text {
       // Adapted from scodec-bits, licensed under 3-clause BSD
       def encode(c: ByteVector): (String, ByteVector) = {
         val bytes = c.toArray
-        val bldr = CharBuffer.allocate(((bytes.length + 2) / 3) * 4)
-        var idx = 0
-        val mod = bytes.length % 3
+        val bldr  = CharBuffer.allocate(((bytes.length + 2) / 3) * 4)
+        var idx   = 0
+        val mod   = bytes.length % 3
         while (idx < bytes.length - mod) {
           var buffer = ((bytes(idx) & 0xff) << 16) | ((bytes(idx + 1) & 0xff) << 8) | (bytes(
             idx + 2
           ) & 0xff)
           val fourth = buffer & 0x3f
           buffer = buffer >> 6
-          val third = buffer & 0x3f
+          val third  = buffer & 0x3f
           buffer = buffer >> 6
           val second = buffer & 0x3f
           buffer = buffer >> 6
-          val first = buffer
+          val first  = buffer
           bldr
             .append(alphabet.toChar(first))
             .append(alphabet.toChar(second))
@@ -722,7 +722,7 @@ object text {
           idx = idx + 3
         }
         (bldr: Buffer).flip()
-        val out = bldr.toString
+        val out   = bldr.toString
         if (mod == 0)
           (out, ByteVector.empty)
         else if (mod == 1)
@@ -736,26 +736,26 @@ object text {
           case Some((hd, tl)) =>
             val (out, newCarry) = encode(carry ++ hd.toByteVector)
             Pull.output1(out) >> go(newCarry, tl)
-          case None =>
+          case None           =>
             carry.size match {
-              case 0 => Pull.done
-              case 1 =>
+              case 0     => Pull.done
+              case 1     =>
                 var buffer = (carry(0) & 0xff) << 4
                 val second = buffer & 0x3f
                 buffer = buffer >> 6
-                val first = buffer
-                val out = new String(
+                val first  = buffer
+                val out    = new String(
                   Array(alphabet.toChar(first), alphabet.toChar(second), alphabet.pad, alphabet.pad)
                 )
                 Pull.output1(out)
-              case 2 =>
+              case 2     =>
                 var buffer = ((carry(0) & 0xff) << 10) | ((carry(1) & 0xff) << 2)
-                val third = buffer & 0x3f
+                val third  = buffer & 0x3f
                 buffer = buffer >> 6
                 val second = buffer & 0x3f
                 buffer = buffer >> 6
-                val first = buffer
-                val out = new String(
+                val first  = buffer
+                val out    = new String(
                   Array(
                     alphabet.toChar(first),
                     alphabet.toChar(second),
@@ -791,11 +791,11 @@ object text {
         alphabet: Bases.HexAlphabet
     ): Pipe[F, String, Byte] = {
       // Adapted from scodec-bits, licensed under 3-clause BSD
-      def decode1(str: String, hi0: Int, midByte0: Boolean): (Chunk[Byte], Int, Boolean) = {
-        val bldr = ByteBuffer.allocate((str.size + 1) / 2)
+      def decode1(str: String, hi0: Int, midByte0: Boolean):   (Chunk[Byte], Int, Boolean) = {
+        val bldr       = ByteBuffer.allocate((str.size + 1) / 2)
         var idx, count = 0
-        var hi = hi0
-        var midByte = midByte0
+        var hi         = hi0
+        var midByte    = midByte0
         while (idx < str.length) {
           val c = str(idx)
           if (!alphabet.ignore(c))
@@ -818,25 +818,25 @@ object text {
         (bldr: Buffer).flip()
         (Chunk.byteVector(ByteVector(bldr)), hi, midByte)
       }
-      def dropPrefix(s: Stream[F, String], acc: String): Pull[F, Byte, Unit] =
+      def dropPrefix(s: Stream[F, String], acc: String):       Pull[F, Byte, Unit]         =
         s.pull.uncons1.flatMap {
           case Some((hd, tl)) =>
             if (acc.size + hd.size < 2) dropPrefix(tl, acc + hd)
             else {
-              val str = acc + hd
+              val str           = acc + hd
               val withoutPrefix =
                 if (str.startsWith("0x") || str.startsWith("0X")) str.substring(2) else str
               go(tl.cons1(withoutPrefix), 0, false)
             }
-          case None =>
+          case None           =>
             Pull.done
         }
-      def go(s: Stream[F, String], hi: Int, midByte: Boolean): Pull[F, Byte, Unit] =
+      def go(s: Stream[F, String], hi: Int, midByte: Boolean): Pull[F, Byte, Unit]         =
         s.pull.uncons1.flatMap {
           case Some((hd, tl)) =>
             val (out, newHi, newMidByte) = decode1(hd, hi, midByte)
             Pull.output(out) >> go(tl, newHi, newMidByte)
-          case None =>
+          case None           =>
             if (midByte) Pull.raiseError(new IllegalArgumentException("Nibble left over"))
             else Pull.done
         }

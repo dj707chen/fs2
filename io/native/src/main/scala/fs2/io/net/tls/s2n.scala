@@ -27,8 +27,8 @@ import scala.scalanative.unsafe._
 @link("s2n")
 private[tls] object s2n {
 
-  final val S2N_SUCCESS = 0
-  final val S2N_FAILURE = -1
+  final val S2N_SUCCESS          = 0
+  final val S2N_FAILURE          = -1
   final val S2N_CALLBACK_BLOCKED = -2
 
   type s2n_error_type = CUnsignedInt
@@ -39,19 +39,19 @@ private[tls] object s2n {
   final val S2N_CLIENT = 1
 
   type s2n_blocked_status = CUnsignedInt
-  final val S2N_NOT_BLOCKED = 0
-  final val S2N_BLOCKED_ON_READ = 1
-  final val S2N_BLOCKED_ON_WRITE = 2
+  final val S2N_NOT_BLOCKED                  = 0
+  final val S2N_BLOCKED_ON_READ              = 1
+  final val S2N_BLOCKED_ON_WRITE             = 2
   final val S2N_BLOCKED_ON_APPLICATION_INPUT = 3
-  final val S2N_BLOCKED_ON_EARLY_DATA = 4
+  final val S2N_BLOCKED_ON_EARLY_DATA        = 4
 
   type s2n_cert_auth_type = CUnsignedInt
-  final val S2N_CERT_AUTH_NONE = 0
+  final val S2N_CERT_AUTH_NONE     = 0
   final val S2N_CERT_AUTH_REQUIRED = 1
   final val S2N_CERT_AUTH_OPTIONAL = 2
 
   type s2n_blinding = CUnsignedInt
-  final val S2N_BUILT_IN_BLINDING = 0
+  final val S2N_BUILT_IN_BLINDING     = 0
   final val S2N_SELF_SERVICE_BLINDING = 1
 
   type s2n_config
@@ -82,10 +82,10 @@ private[tls] object s2n {
   def s2n_cert_chain_and_key_new(): Ptr[s2n_cert_chain_and_key] = extern
 
   def s2n_cert_chain_and_key_load_pem_bytes(
-      chain_and_key: Ptr[s2n_cert_chain_and_key],
-      chain_pem: Ptr[Byte],
-      chain_pem_len: CUnsignedInt,
-      private_key_pem: Ptr[Byte],
+      chain_and_key:       Ptr[s2n_cert_chain_and_key],
+      chain_pem:           Ptr[Byte],
+      chain_pem_len:       CUnsignedInt,
+      private_key_pem:     Ptr[Byte],
       private_key_pem_len: CUnsignedInt
   ): CInt = extern
 
@@ -96,7 +96,7 @@ private[tls] object s2n {
   ): Ptr[s2n_cert_private_key] = extern
 
   def s2n_config_add_cert_chain_and_key_to_store(
-      config: Ptr[s2n_config],
+      config:        Ptr[s2n_config],
       cert_key_pair: Ptr[s2n_cert_chain_and_key]
   ): CInt = extern
 
@@ -108,14 +108,14 @@ private[tls] object s2n {
 
   def s2n_config_set_verify_host_callback(
       config: Ptr[s2n_config],
-      cb: s2n_verify_host_fn,
-      data: Ptr[Byte]
+      cb:     s2n_verify_host_fn,
+      data:   Ptr[Byte]
   ): CInt = extern
 
   def s2n_config_disable_x509_verification(config: Ptr[s2n_config]): CInt = extern
 
   def s2n_config_set_max_cert_chain_depth(
-      config: Ptr[s2n_config],
+      config:    Ptr[s2n_config],
       max_depth: CUnsignedShort
   ): CInt = extern
 
@@ -143,7 +143,7 @@ private[tls] object s2n {
 
   def s2n_connection_set_verify_host_callback(
       conn: Ptr[s2n_connection],
-      cb: s2n_verify_host_fn,
+      cb:   s2n_verify_host_fn,
       data: Ptr[Byte]
   ): CInt = extern
 
@@ -155,8 +155,8 @@ private[tls] object s2n {
     extern
 
   def s2n_connection_append_protocol_preference(
-      conn: Ptr[s2n_connection],
-      protocol: Ptr[Byte],
+      conn:         Ptr[s2n_connection],
+      protocol:     Ptr[Byte],
       protocol_len: Byte
   ): CInt = extern
 
@@ -167,16 +167,16 @@ private[tls] object s2n {
   def s2n_negotiate(conn: Ptr[s2n_connection], blocked: Ptr[s2n_blocked_status]): CInt = extern
 
   def s2n_send(
-      conn: Ptr[s2n_connection],
-      buf: Ptr[Byte],
-      size: CSSize,
+      conn:    Ptr[s2n_connection],
+      buf:     Ptr[Byte],
+      size:    CSSize,
       blocked: Ptr[s2n_blocked_status]
   ): CInt = extern
 
   def s2n_recv(
-      conn: Ptr[s2n_connection],
-      buf: Ptr[Byte],
-      size: CSSize,
+      conn:    Ptr[s2n_connection],
+      buf:     Ptr[Byte],
+      size:    CSSize,
       blocked: Ptr[s2n_blocked_status]
   ): CInt = extern
 
@@ -190,13 +190,13 @@ private[tls] object s2n {
     extern
 
   def s2n_connection_set_client_auth_type(
-      conn: Ptr[s2n_connection],
+      conn:             Ptr[s2n_connection],
       client_auth_type: s2n_cert_auth_type
   ): CInt = extern
 
   def s2n_connection_get_session(
-      conn: Ptr[s2n_connection],
-      session: Ptr[Byte],
+      conn:      Ptr[s2n_connection],
+      session:   Ptr[Byte],
       maxLength: CSize
   ): CInt = extern
 

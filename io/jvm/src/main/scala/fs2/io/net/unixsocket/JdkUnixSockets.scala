@@ -33,8 +33,7 @@ object JdkUnixSockets {
     new JdkUnixSocketsImpl[F]
 }
 
-private[unixsocket] class JdkUnixSocketsImpl[F[_]](implicit F: Async[F])
-    extends UnixSockets.AsyncUnixSockets[F] {
+private[unixsocket] class JdkUnixSocketsImpl[F[_]](implicit F: Async[F]) extends UnixSockets.AsyncUnixSockets[F] {
   protected def openChannel(address: UnixSocketAddress) = F.delay {
     val ch = SocketChannel.open(StandardProtocolFamily.UNIX)
     ch.connect(UnixDomainSocketAddress.of(address.path))

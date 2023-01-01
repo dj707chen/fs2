@@ -71,9 +71,9 @@ private[file] trait FilesPlatform[F[_]] extends DeprecatedFilesApi[F] { self: Fi
     * JVM only.
     */
   def watch(
-      path: Path,
-      types: Seq[Watcher.EventType],
-      modifiers: Seq[WatchEvent.Modifier],
+      path:        Path,
+      types:       Seq[Watcher.EventType],
+      modifiers:   Seq[WatchEvent.Modifier],
       pollTimeout: FiniteDuration
   ): Stream[F, Watcher.Event]
 }
@@ -84,8 +84,7 @@ private[file] trait FilesCompanionPlatform {
 
   private case class NioFileKey(value: AnyRef) extends FileKey
 
-  private final class AsyncFiles[F[_]](protected implicit val F: Async[F])
-      extends Files.UnsealedFiles[F] {
+  private final class AsyncFiles[F[_]](protected implicit val F: Async[F]) extends Files.UnsealedFiles[F] {
 
     def copy(source: Path, target: Path, flags: CopyFlags): F[Unit] =
       Sync[F].blocking {
@@ -131,9 +130,9 @@ private[file] trait FilesCompanionPlatform {
       }
 
     def createTempFile(
-        dir: Option[Path],
-        prefix: String,
-        suffix: String,
+        dir:         Option[Path],
+        prefix:      String,
+        suffix:      String,
         permissions: Option[Permissions]
     ): F[Path] =
       (dir match {
@@ -146,15 +145,15 @@ private[file] trait FilesCompanionPlatform {
               permissions.map(_.toNioFileAttribute).toSeq: _*
             )
           )
-        case None =>
+        case None      =>
           Sync[F].blocking(
             JFiles.createTempFile(prefix, suffix, permissions.map(_.toNioFileAttribute).toSeq: _*)
           )
       }).map(Path.fromNioPath)
 
     def createTempDirectory(
-        dir: Option[Path],
-        prefix: String,
+        dir:         Option[Path],
+        prefix:      String,
         permissions: Option[Permissions]
     ): F[Path] =
       (dir match {
@@ -166,7 +165,7 @@ private[file] trait FilesCompanionPlatform {
               permissions.map(_.toNioFileAttribute).toSeq: _*
             )
           )
-        case None =>
+        case None      =>
           Sync[F].blocking(
             JFiles.createTempDirectory(prefix, permissions.map(_.toNioFileAttribute).toSeq: _*)
           )
@@ -185,7 +184,7 @@ private[file] trait FilesCompanionPlatform {
       Sync[F].blocking(JFiles.deleteIfExists(path.toNioPath))
 
     def deleteRecursively(
-        path: Path,
+        path:        Path,
         followLinks: Boolean = false
     ): F[Unit] =
       Sync[F].blocking {
@@ -199,7 +198,7 @@ private[file] trait FilesCompanionPlatform {
               JFiles.deleteIfExists(path)
               FileVisitResult.CONTINUE
             }
-            override def postVisitDirectory(path: JPath, e: IOException): FileVisitResult = {
+            override def postVisitDirectory(path: JPath, e: IOException):     FileVisitResult = {
               JFiles.deleteIfExists(path)
               FileVisitResult.CONTINUE
             }
@@ -321,11 +320,11 @@ private[file] trait FilesCompanionPlatform {
       Sync[F].blocking(Path.fromNioPath(path.toNioPath.toRealPath()))
 
     def setFileTimes(
-        path: Path,
+        path:         Path,
         lastModified: Option[FiniteDuration],
-        lastAccess: Option[FiniteDuration],
-        create: Option[FiniteDuration],
-        followLinks: Boolean
+        lastAccess:   Option[FiniteDuration],
+        create:       Option[FiniteDuration],
+        followLinks:  Boolean
     ): F[Unit] =
       Sync[F].blocking {
         val view = JFiles.getFileAttributeView(
@@ -360,7 +359,7 @@ private[file] trait FilesCompanionPlatform {
 
     private final val pathStreamChunkSize = 16
     protected def _runJavaCollectionResource[C <: AutoCloseable](
-        javaCollection: F[C],
+        javaCollection:     F[C],
         collectionIterator: C => Iterator[JPath]
     ): Stream[F, JPath] =
       Stream
@@ -370,9 +369,9 @@ private[file] trait FilesCompanionPlatform {
     def createWatcher: Resource[F, Watcher[F]] = Watcher.default
 
     def watch(
-        path: Path,
-        types: Seq[Watcher.EventType],
-        modifiers: Seq[WatchEvent.Modifier],
+        path:        Path,
+        types:       Seq[Watcher.EventType],
+        modifiers:   Seq[WatchEvent.Modifier],
         pollTimeout: FiniteDuration
     ): Stream[F, Watcher.Event] =
       Stream
@@ -381,24 +380,23 @@ private[file] trait FilesCompanionPlatform {
         .flatMap(_.events(pollTimeout))
   }
 
-  private class DelegatingBasicFileAttributes(attr: JBasicFileAttributes)
-      extends BasicFileAttributes.UnsealedBasicFileAttributes {
-    def creationTime = attr.creationTime.toMillis.millis
-    def fileKey = Option(attr.fileKey).map(NioFileKey(_))
-    def isDirectory = attr.isDirectory
-    def isOther = attr.isOther
-    def isRegularFile = attr.isRegularFile
-    def isSymbolicLink = attr.isSymbolicLink
-    def lastAccessTime = attr.lastAccessTime.toMillis.millis
+  private class DelegatingBasicFileAttributes(attr: JBasicFileAttributes) extends BasicFileAttributes.UnsealedBasicFileAttributes {
+    def creationTime     = attr.creationTime.toMillis.millis
+    def fileKey          = Option(attr.fileKey).map(NioFileKey(_))
+    def isDirectory      = attr.isDirectory
+    def isOther          = attr.isOther
+    def isRegularFile    = attr.isRegularFile
+    def isSymbolicLink   = attr.isSymbolicLink
+    def lastAccessTime   = attr.lastAccessTime.toMillis.millis
     def lastModifiedTime = attr.lastModifiedTime.toMillis.millis
-    def size = attr.size
+    def size             = attr.size
   }
 
   private class DelegatingPosixFileAttributes(attr: JPosixFileAttributes)
       extends DelegatingBasicFileAttributes(attr)
       with PosixFileAttributes.UnsealedPosixFileAttributes {
-    def owner: Principal = attr.owner
-    def group: Principal = attr.group
+    def owner:       Principal        = attr.owner
+    def group:       Principal        = attr.group
     def permissions: PosixPermissions = PosixPermissions.fromString(attr.permissions.toString).get
   }
 }

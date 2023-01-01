@@ -29,12 +29,12 @@ import scodec.codecs._
 
 /** Flags in the adaptation field. */
 case class AdaptationFieldFlags(
-    discontinuity: Boolean,
-    randomAccess: Boolean,
-    priority: Boolean,
-    pcrFlag: Boolean,
-    opcrFlag: Boolean,
-    splicingPointFlag: Boolean,
+    discontinuity:            Boolean,
+    randomAccess:             Boolean,
+    priority:                 Boolean,
+    pcrFlag:                  Boolean,
+    opcrFlag:                 Boolean,
+    splicingPointFlag:        Boolean,
     transportPrivateDataFlag: Boolean,
     adaptationFieldExtension: Boolean
 )

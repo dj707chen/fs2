@@ -50,7 +50,7 @@ final case class ReadCursor[F[_]](file: FileHandle[F], offset: Long) {
 
   private def read_[G[_]: Functor](
       chunkSize: Int,
-      u: F ~> G
+      u:         F ~> G
   ): G[Option[(ReadCursor[F], Chunk[Byte])]] =
     u(file.read(chunkSize, offset)).map {
       _.map { chunk =>
@@ -91,7 +91,7 @@ final case class ReadCursor[F[_]](file: FileHandle[F], offset: Long) {
     * polling for updates
     */
   def tail(chunkSize: Int, pollDelay: FiniteDuration)(implicit
-      t: Temporal[F]
+      t:              Temporal[F]
   ): Pull[F, Byte, ReadCursor[F]] =
     readPull(chunkSize).flatMap {
       case Some((next, chunk)) => Pull.output(chunk) >> next.tail(chunkSize, pollDelay)

@@ -36,8 +36,8 @@ import org.reactivestreams._
   * @see [[https://github.com/reactive-streams/reactive-streams-jvm#1-publisher-code]]
   */
 final class StreamUnicastPublisher[F[_]: Async, A] private (
-    val stream: Stream[F, A],
-    startDispatcher: Dispatcher[F],
+    val stream:        Stream[F, A],
+    startDispatcher:   Dispatcher[F],
     requestDispatcher: Dispatcher[F]
 ) extends Publisher[A] {
 
@@ -63,7 +63,7 @@ final class StreamUnicastPublisher[F[_]: Async, A] private (
 object StreamUnicastPublisher {
   @deprecated("Use overload which takes only the stream and returns a Resource", "3.4.0")
   def apply[F[_]: Async, A](
-      s: Stream[F, A],
+      s:          Stream[F, A],
       dispatcher: Dispatcher[F]
   ): StreamUnicastPublisher[F, A] =
     new StreamUnicastPublisher(s, dispatcher, dispatcher)

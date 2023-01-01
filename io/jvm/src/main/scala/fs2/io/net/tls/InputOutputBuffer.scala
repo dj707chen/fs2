@@ -61,7 +61,7 @@ private[tls] trait InputOutputBuffer[F[_]] {
 private[tls] object InputOutputBuffer {
   def apply[F[_]: Sync](inputSize: Int, outputSize: Int): F[InputOutputBuffer[F]] =
     for {
-      inBuff <- Ref[F].of[ByteBuffer](ByteBuffer.allocate(inputSize))
+      inBuff  <- Ref[F].of[ByteBuffer](ByteBuffer.allocate(inputSize))
       outBuff <- Ref[F].of[ByteBuffer](ByteBuffer.allocate(outputSize))
     } yield new InputOutputBuffer[F] {
 
@@ -102,8 +102,8 @@ private[tls] object InputOutputBuffer {
           else
             Sync[F].delay {
               (out: Buffer).flip()
-              val cap = out.limit()
-              val sz = cap.min(maxBytes)
+              val cap  = out.limit()
+              val sz   = cap.min(maxBytes)
               val dest = new Array[Byte](sz)
               out.get(dest)
               out.compact()

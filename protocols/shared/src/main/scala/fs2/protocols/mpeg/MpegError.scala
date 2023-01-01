@@ -38,7 +38,7 @@ object MpegError {
     override def toString = message
   }
   case class Decoding(data: BitVector, err: Err) extends MpegError {
-    def message = s"error encountered when decoding: $err ${data.toHex}"
+    def message           = s"error encountered when decoding: $err ${data.toHex}"
     override def toString = message
   }
 

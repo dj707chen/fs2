@@ -26,8 +26,7 @@ package file
 import scala.scalajs.js
 import scala.util.control.NoStackTrace
 
-class FileSystemException(message: String = null, cause: Throwable = null)
-    extends IOException(message, cause)
+class FileSystemException(message: String = null, cause: Throwable = null) extends IOException(message, cause)
 object FileSystemException {
   private[io] def unapply(cause: js.JavaScriptException): Option[FileSystemException] =
     FileAlreadyExistsException
@@ -38,8 +37,7 @@ object FileSystemException {
       .orElse(AccessDeniedException.unapply(cause))
 }
 
-class AccessDeniedException(message: String = null, cause: Throwable = null)
-    extends FileSystemException(message, cause)
+class AccessDeniedException(message: String = null, cause: Throwable = null) extends FileSystemException(message, cause)
 private class JavaScriptAccessDeniedException(file: String, cause: js.JavaScriptException)
     extends AccessDeniedException(file, cause)
     with NoStackTrace
@@ -53,8 +51,7 @@ object AccessDeniedException {
     }
 }
 
-class DirectoryNotEmptyException(message: String = null, cause: Throwable = null)
-    extends FileSystemException(message, cause)
+class DirectoryNotEmptyException(message: String = null, cause: Throwable = null) extends FileSystemException(message, cause)
 private class JavaScriptDirectoryNotEmptyException(file: String, cause: js.JavaScriptException)
     extends DirectoryNotEmptyException(file, cause)
     with NoStackTrace
@@ -68,8 +65,7 @@ object DirectoryNotEmptyException {
     }
 }
 
-class FileAlreadyExistsException(message: String = null, cause: Throwable = null)
-    extends FileSystemException(message, cause)
+class FileAlreadyExistsException(message: String = null, cause: Throwable = null) extends FileSystemException(message, cause)
 private class JavaScriptFileAlreadyExistsException(file: String, cause: js.JavaScriptException)
     extends FileAlreadyExistsException(file, cause)
     with NoStackTrace
@@ -85,8 +81,7 @@ object FileAlreadyExistsException {
 
 class FileSystemLoopException(file: String) extends FileSystemException(file)
 
-class NoSuchFileException(message: String = null, cause: Throwable = null)
-    extends FileSystemException(message, cause)
+class NoSuchFileException(message: String = null, cause: Throwable = null) extends FileSystemException(message, cause)
 private class JavaScriptNoSuchFileException(file: String, cause: js.JavaScriptException)
     extends NoSuchFileException(file, cause)
     with NoStackTrace
@@ -100,8 +95,7 @@ object NoSuchFileException {
     }
 }
 
-class NotDirectoryException(message: String = null, cause: Throwable = null)
-    extends FileSystemException(message, cause)
+class NotDirectoryException(message: String = null, cause: Throwable = null) extends FileSystemException(message, cause)
 private class JavaScriptNotDirectoryException(file: String, cause: js.JavaScriptException)
     extends NotDirectoryException(file, cause)
     with NoStackTrace

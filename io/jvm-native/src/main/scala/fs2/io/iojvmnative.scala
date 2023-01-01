@@ -66,9 +66,9 @@ private[fs2] trait iojvmnative {
     * @see [[readClassLoaderResource]] for a resource relative to a classloader.
     */
   def readClassResource[F[_], C](
-      name: String,
+      name:      String,
       chunkSize: Int = 64 * 1024
-  )(implicit F: Sync[F], ct: ClassTag[C]): Stream[F, Byte] =
+  )(implicit F:  Sync[F], ct: ClassTag[C]): Stream[F, Byte] =
     Stream.eval(F.blocking(Option(ct.runtimeClass.getResourceAsStream(name)))).flatMap {
       case Some(resource) => io.readInputStream(resource.pure, chunkSize)
       case None           => Stream.raiseError(new IOException(s"Resource $name not found"))
@@ -78,10 +78,10 @@ private[fs2] trait iojvmnative {
     * @see [[readClassResource]] for a resource relative to a class.
     */
   def readClassLoaderResource[F[_]](
-      name: String,
-      chunkSize: Int = 64 * 1024,
+      name:        String,
+      chunkSize:   Int = 64 * 1024,
       classLoader: ClassLoader = getClass().getClassLoader()
-  )(implicit F: Sync[F]): Stream[F, Byte] =
+  )(implicit F:    Sync[F]): Stream[F, Byte] =
     Stream.eval(F.blocking(Option(classLoader.getResourceAsStream(name)))).flatMap {
       case Some(resource) => io.readInputStream(resource.pure, chunkSize)
       case None           => Stream.raiseError(new IOException(s"Resource $name not found"))

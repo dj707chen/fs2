@@ -50,40 +50,38 @@ private[net] trait DatagramSocketCompanionPlatform {
   type NetworkInterface = String
 
   private[net] def forAsync[F[_]](
-      sock: facade.dgram.Socket
+      sock:     facade.dgram.Socket
   )(implicit F: Async[F]): Resource[F, DatagramSocket[F]] =
     for {
       dispatcher <- Dispatcher.sequential[F]
-      queue <- Queue
-        .circularBuffer[F, Datagram](1024)
-        .toResource // TODO how to set this? Or, bad design?
-      error <- F.deferred[Throwable].toResource
-      _ <- sock.registerListener2[F, Uint8Array, facade.dgram.RemoteInfo]("message", dispatcher) {
-        (msg, rinfo) =>
-          queue.offer(
-            Datagram(
-              SocketAddress(
-                IpAddress.fromString(rinfo.address).get,
-                Port.fromInt(rinfo.port).get
-              ),
-              Chunk.uint8Array(msg)
-            )
-          )
-      }
-      _ <- sock.registerListener[F, js.Error]("error", dispatcher) { e =>
-        error.complete(js.JavaScriptException(e)).void
-      }
-      socket <- Resource.make(F.pure(new AsyncDatagramSocket(sock, queue, error)))(_ =>
-        F.async_[Unit](cb => sock.close(() => cb(Right(()))))
-      )
+      queue      <- Queue
+                      .circularBuffer[F, Datagram](1024)
+                      .toResource // TODO how to set this? Or, bad design?
+      error      <- F.deferred[Throwable].toResource
+      _          <- sock.registerListener2[F, Uint8Array, facade.dgram.RemoteInfo]("message", dispatcher) { (msg, rinfo) =>
+                      queue.offer(
+                        Datagram(
+                          SocketAddress(
+                            IpAddress.fromString(rinfo.address).get,
+                            Port.fromInt(rinfo.port).get
+                          ),
+                          Chunk.uint8Array(msg)
+                        )
+                      )
+                    }
+      _          <- sock.registerListener[F, js.Error]("error", dispatcher) { e =>
+                      error.complete(js.JavaScriptException(e)).void
+                    }
+      socket     <-
+        Resource.make(F.pure(new AsyncDatagramSocket(sock, queue, error)))(_ => F.async_[Unit](cb => sock.close(() => cb(Right(())))))
     } yield socket
 
   private final class AsyncDatagramSocket[F[_]](
-      sock: facade.dgram.Socket,
+      sock:  facade.dgram.Socket,
       queue: Queue[F, Datagram],
       error: Deferred[F, Throwable]
   )(implicit
-      F: Async[F]
+      F:     Async[F]
   ) extends DatagramSocket[F] {
 
     override def read: F[Datagram] = EitherT(
@@ -112,12 +110,12 @@ private[net] trait DatagramSocketCompanionPlatform {
       }
 
     override def join(
-        join: MulticastJoin[IpAddress],
+        join:      MulticastJoin[IpAddress],
         interface: NetworkInterface
     ): F[GroupMembership] = F
       .delay {
         join match {
-          case AnySourceMulticastJoin(group) =>
+          case AnySourceMulticastJoin(group)              =>
             sock.addMembership(group.address.toString, interface)
           case SourceSpecificMulticastJoin(source, group) =>
             sock.addSourceSpecificMembership(source.toString, group.address.toString, interface)
@@ -127,7 +125,7 @@ private[net] trait DatagramSocketCompanionPlatform {
 
         override def drop: F[Unit] = F.delay {
           join match {
-            case AnySourceMulticastJoin(group) =>
+            case AnySourceMulticastJoin(group)              =>
               sock.dropMembership(group.address.toString, interface)
             case SourceSpecificMulticastJoin(source, group) =>
               sock.dropSourceSpecificMembership(source.toString, group.address.toString, interface)

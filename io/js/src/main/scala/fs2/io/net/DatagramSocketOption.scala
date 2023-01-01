@@ -34,7 +34,7 @@ import fs2.io.internal.facade
   */
 sealed trait DatagramSocketOption {
   type Value
-  val key: DatagramSocketOption.Key[Value]
+  val key:   DatagramSocketOption.Key[Value]
   val value: Value
 }
 
@@ -45,7 +45,7 @@ object DatagramSocketOption {
 
   def apply[A](key0: Key[A], value0: A): DatagramSocketOption = new DatagramSocketOption {
     type Value = A
-    val key = key0
+    val key   = key0
     val value = value0
   }
 
@@ -93,11 +93,11 @@ object DatagramSocketOption {
       }
   }
 
-  def broadcast(value: Boolean): DatagramSocketOption = apply(Broadcast, value)
-  def multicastInterface(value: String): DatagramSocketOption = apply(MulticastInterface, value)
-  def multicastLoopback(value: Boolean): DatagramSocketOption = apply(MulticastLoopback, value)
-  def multicastTtl(value: Int): DatagramSocketOption = apply(MulticastTtl, value)
-  def receiveBufferSize(value: Int): DatagramSocketOption = apply(ReceiveBufferSize, value)
-  def sendBufferSize(value: Int): DatagramSocketOption = apply(SendBufferSize, value)
-  def ttl(value: Int): DatagramSocketOption = apply(Ttl, value)
+  def broadcast(value:          Boolean): DatagramSocketOption = apply(Broadcast, value)
+  def multicastInterface(value: String):  DatagramSocketOption = apply(MulticastInterface, value)
+  def multicastLoopback(value:  Boolean): DatagramSocketOption = apply(MulticastLoopback, value)
+  def multicastTtl(value:       Int):     DatagramSocketOption = apply(MulticastTtl, value)
+  def receiveBufferSize(value:  Int):     DatagramSocketOption = apply(ReceiveBufferSize, value)
+  def sendBufferSize(value:     Int):     DatagramSocketOption = apply(SendBufferSize, value)
+  def ttl(value:                Int):     DatagramSocketOption = apply(Ttl, value)
 }

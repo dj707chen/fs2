@@ -28,8 +28,8 @@ final class CopyFlag private (private[file] val option: CopyOption) extends AnyV
 object CopyFlag extends CopyFlagCompanionApi {
   def fromCopyOption(option: CopyOption): CopyFlag = new CopyFlag(option)
 
-  val AtomicMove = fromCopyOption(StandardCopyOption.ATOMIC_MOVE)
-  val CopyAttributes = fromCopyOption(StandardCopyOption.COPY_ATTRIBUTES)
+  val AtomicMove      = fromCopyOption(StandardCopyOption.ATOMIC_MOVE)
+  val CopyAttributes  = fromCopyOption(StandardCopyOption.COPY_ATTRIBUTES)
   val ReplaceExisting = fromCopyOption(StandardCopyOption.REPLACE_EXISTING)
 }
 

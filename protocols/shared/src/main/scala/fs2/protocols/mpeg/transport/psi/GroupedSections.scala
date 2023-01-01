@@ -54,10 +54,9 @@ object GroupedSections {
     }
   }
 
-  private case class DefaultGroupedSections[A <: Section](head: A, tail: List[A])
-      extends GroupedSections[A] {
+  private case class DefaultGroupedSections[A <: Section](head: A, tail: List[A]) extends GroupedSections[A] {
     val tableId = head.tableId
-    val list = head :: tail
+    val list    = head :: tail
   }
 
   def apply[A <: Section](head: A, tail: List[A] = Nil): GroupedSections[A] =
@@ -68,20 +67,19 @@ object GroupedSections {
       accumulatorByIds: Map[ExtendedTableId, SectionAccumulator[A]]
   )
 
-  def groupExtendedSections[A <: ExtendedSection]
-      : Scan[ExtendedSectionGrouperState[A], A, Either[GroupingError, GroupedSections[A]]] = {
+  def groupExtendedSections[A <: ExtendedSection]: Scan[ExtendedSectionGrouperState[A], A, Either[GroupingError, GroupedSections[A]]] = {
     def toKey(section: A): ExtendedTableId =
       ExtendedTableId(section.tableId, section.extension.tableIdExtension)
     Scan.stateful[ExtendedSectionGrouperState[A], A, Either[GroupingError, GroupedSections[A]]](
       ExtendedSectionGrouperState(Map.empty)
     ) { (state, section) =>
-      val key = toKey(section)
+      val key        = toKey(section)
       val (err, acc) = state.accumulatorByIds.get(key) match {
-        case None => (None, SectionAccumulator(section))
+        case None      => (None, SectionAccumulator(section))
         case Some(acc) =>
           acc.add(section) match {
             case Right(acc) => (None, acc)
-            case Left(err) =>
+            case Left(err)  =>
               (
                 Some(GroupingError(section.tableId, section.extension.tableIdExtension, err)),
                 SectionAccumulator(section)
@@ -90,13 +88,13 @@ object GroupedSections {
       }
 
       acc.complete match {
-        case None =>
+        case None           =>
           val newState = ExtendedSectionGrouperState(state.accumulatorByIds + (key -> acc))
-          val out = err.map(e => Chunk.singleton(Left(e))).getOrElse(Chunk.empty)
+          val out      = err.map(e => Chunk.singleton(Left(e))).getOrElse(Chunk.empty)
           (newState, out)
         case Some(sections) =>
           val newState = ExtendedSectionGrouperState(state.accumulatorByIds - key)
-          val out = Chunk.seq((Right(sections) :: err.map(e => Left(e)).toList).reverse)
+          val out      = Chunk.seq((Right(sections) :: err.map(e => Left(e)).toList).reverse)
           (newState, out)
       }
     }
@@ -123,7 +121,7 @@ object GroupedSections {
     */
   def groupGeneral[NonExtendedState](
       initialNonExtendedState: NonExtendedState,
-      nonExtended: Scan[NonExtendedState, Section, Either[GroupingError, GroupedSections[Section]]]
+      nonExtended:             Scan[NonExtendedState, Section, Either[GroupingError, GroupedSections[Section]]]
   ): Scan[(NonExtendedState, ExtendedSectionGrouperState[ExtendedSection]), Section, Either[
     GroupingError,
     GroupedSections[Section]
@@ -139,8 +137,8 @@ object GroupedSections {
     */
   def groupGeneralConditionally[NonExtendedState](
       initialNonExtendedState: NonExtendedState,
-      nonExtended: Scan[NonExtendedState, Section, Either[GroupingError, GroupedSections[Section]]],
-      groupExtended: ExtendedSection => Boolean = _ => true
+      nonExtended:             Scan[NonExtendedState, Section, Either[GroupingError, GroupedSections[Section]]],
+      groupExtended:           ExtendedSection => Boolean = _ => true
   ): Scan[(NonExtendedState, ExtendedSectionGrouperState[ExtendedSection]), Section, Either[
     GroupingError,
     GroupedSections[Section]
@@ -154,7 +152,7 @@ object GroupedSections {
           case s: ExtendedSection if groupExtended(s) =>
             val (s2, out) = groupExtendedSections.transform(extendedState, s)
             (nonExtendedState -> s2, out)
-          case s: Section =>
+          case s: Section                             =>
             val (s2, out) = nonExtended.transform(nonExtendedState, s)
             (s2 -> extendedState, out)
         }

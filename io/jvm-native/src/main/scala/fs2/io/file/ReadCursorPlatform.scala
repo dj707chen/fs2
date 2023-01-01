@@ -29,7 +29,7 @@ import cats.effect.kernel.{Async, Resource}
 private[file] trait ReadCursorCompanionPlatform {
   @deprecated("Use Files[F].readCursor", "3.0.0")
   def fromPath[F[_]: Async](
-      path: JPath,
+      path:  JPath,
       flags: Seq[OpenOption] = Nil
   ): Resource[F, ReadCursor[F]] =
     Files[F].readCursor(path, flags)

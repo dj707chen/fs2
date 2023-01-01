@@ -50,16 +50,16 @@ sealed trait DTLSSocket[F[_]] extends DatagramSocket[F] {
 object DTLSSocket {
 
   private[tls] def apply[F[_]: Async](
-      socket: DatagramSocket[F],
+      socket:        DatagramSocket[F],
       remoteAddress: SocketAddress[IpAddress],
-      engine: TLSEngine[F]
+      engine:        TLSEngine[F]
   ): Resource[F, DTLSSocket[F]] =
     Resource.make(mk(socket, remoteAddress, engine))(_ => engine.stopWrap >> engine.stopUnwrap)
 
   private def mk[F[_]: Async](
-      socket: DatagramSocket[F],
+      socket:        DatagramSocket[F],
       remoteAddress: SocketAddress[IpAddress],
-      engine: TLSEngine[F]
+      engine:        TLSEngine[F]
   ): F[DTLSSocket[F]] =
     Applicative[F].pure {
       new DTLSSocket[F] {
@@ -70,18 +70,18 @@ object DTLSSocket {
             case None        => read
           }
 
-        def reads: Stream[F, Datagram] =
+        def reads:                     Stream[F, Datagram] =
           Stream.repeatEval(read)
-        def write(datagram: Datagram): F[Unit] =
+        def write(datagram: Datagram): F[Unit]             =
           engine.write(datagram.bytes)
 
-        def writes: Pipe[F, Datagram, Nothing] =
+        def writes:                                                            Pipe[F, Datagram, Nothing]  =
           _.foreach(write)
-        def localAddress: F[SocketAddress[IpAddress]] = socket.localAddress
-        def join(join: MulticastJoin[IpAddress], interface: NetworkInterface): F[GroupMembership] =
+        def localAddress:                                                      F[SocketAddress[IpAddress]] = socket.localAddress
+        def join(join: MulticastJoin[IpAddress], interface: NetworkInterface): F[GroupMembership]          =
           Sync[F].raiseError(new RuntimeException("DTLSSocket does not support multicast"))
-        def beginHandshake: F[Unit] = engine.beginHandshake
-        def session: F[SSLSession] = engine.session
+        def beginHandshake:                                                    F[Unit]                     = engine.beginHandshake
+        def session:                                                           F[SSLSession]               = engine.session
       }
     }
 }

@@ -28,11 +28,11 @@ import scodec.bits._
 import scodec.codecs._
 
 case class SectionHeaderBlock(
-    length: Length,
-    ordering: ByteOrdering,
+    length:       Length,
+    ordering:     ByteOrdering,
     majorVersion: Int,
     minorVersion: Int,
-    bytes: ByteVector
+    bytes:        ByteVector
 )
 
 object SectionHeaderBlock {

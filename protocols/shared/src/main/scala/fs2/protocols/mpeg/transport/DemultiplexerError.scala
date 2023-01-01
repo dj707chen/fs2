@@ -34,18 +34,18 @@ sealed abstract class DemultiplexerError {
 object DemultiplexerError {
 
   case class Discontinuity(
-      last: ContinuityCounter,
-      current: ContinuityCounter,
+      last:                   ContinuityCounter,
+      current:                ContinuityCounter,
       adaptationFieldControl: Int
   ) extends DemultiplexerError
       with MpegError {
-    def message =
+    def message     =
       s"pid discontinuity: $last to $current with adaptation field control $adaptationFieldControl"
     def toMpegError = this
   }
 
   case class Decoding(data: BitVector, decodingError: Err) extends DemultiplexerError {
-    def message = s"decoding error ($decodingError) while decoding ${data.toHex}"
+    def message     = s"decoding error ($decodingError) while decoding ${data.toHex}"
     def toMpegError = MpegError.Decoding(data, decodingError)
   }
 }

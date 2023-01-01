@@ -49,7 +49,7 @@ object Collector extends CollectorPlatform {
     make(implicitly[ClassTag[A]] match {
       case ClassTag.Byte =>
         Builder.byteArray.asInstanceOf[Builder[A, Array[A]]]
-      case _ => Builder.array[A]
+      case _             => Builder.array[A]
     })
   }
 

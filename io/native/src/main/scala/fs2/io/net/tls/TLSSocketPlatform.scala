@@ -36,20 +36,18 @@ private[tls] trait TLSSocketPlatform[F[_]]
 private[tls] trait TLSSocketCompanionPlatform { self: TLSSocket.type =>
 
   private[tls] def apply[F[_]: Async](
-      socket: Socket[F],
+      socket:     Socket[F],
       connection: S2nConnection[F]
   ): Resource[F, TLSSocket[F]] =
     Resource.eval(mk(socket, connection)) <*
-      Resource.makeFull[F, Unit](poll => poll(connection.handshake))(_ =>
-        connection.shutdown.attempt.void
-      )
+      Resource.makeFull[F, Unit](poll => poll(connection.handshake))(_ => connection.shutdown.attempt.void)
 
   def mk[F[_]](
-      socket: Socket[F],
+      socket:     Socket[F],
       connection: S2nConnection[F]
-  )(implicit F: Async[F]): F[TLSSocket[F]] =
+  )(implicit F:   Async[F]): F[TLSSocket[F]] =
     for {
-      readSem <- Semaphore(1)
+      readSem  <- Semaphore(1)
       writeSem <- Semaphore(1)
     } yield new UnsealedTLSSocket[F] {
       def write(bytes: Chunk[Byte]): F[Unit] =

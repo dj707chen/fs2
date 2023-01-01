@@ -34,7 +34,7 @@ private[file] trait FileHandlePlatform[F[_]]
 
 private[file] trait FileHandleCompanionPlatform {
   private[file] def make[F[_]](
-      fd: facade.fs.FileHandle
+      fd:       facade.fs.FileHandle
   )(implicit F: Async[F]): FileHandle[F] =
     new FileHandle[F] {
 
@@ -78,8 +78,7 @@ private[file] trait FileHandleCompanionPlatform {
             0,
             bytes.size,
             js.BigInt(offset.toString),
-            (err, bytesWritten, _) =>
-              cb(Option(err).map(js.JavaScriptException(_)).toLeft(bytesWritten))
+            (err, bytesWritten, _) => cb(Option(err).map(js.JavaScriptException(_)).toLeft(bytesWritten))
           )
         }.adaptError { case IOException(ex) => ex }
     }

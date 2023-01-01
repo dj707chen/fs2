@@ -40,9 +40,8 @@ private[unixsocket] trait UnixSocketsCompanionPlatform {
         """Must either run on JDK 16+ or have "com.github.jnr" % "jnr-unixsocket" % <version> on the classpath"""
       )
 
-  private[unixsocket] abstract class AsyncUnixSockets[F[_]](implicit F: Async[F])
-      extends UnixSockets[F] {
-    protected def openChannel(address: UnixSocketAddress): F[SocketChannel]
+  private[unixsocket] abstract class AsyncUnixSockets[F[_]](implicit F: Async[F]) extends UnixSockets[F] {
+    protected def openChannel(address:       UnixSocketAddress): F[SocketChannel]
     protected def openServerChannel(address: UnixSocketAddress): F[(F[SocketChannel], F[Unit])]
 
     def client(address: UnixSocketAddress): Resource[F, Socket[F]] =
@@ -51,9 +50,9 @@ private[unixsocket] trait UnixSocketsCompanionPlatform {
         .flatMap(makeSocket[F](_))
 
     def server(
-        address: UnixSocketAddress,
+        address:        UnixSocketAddress,
         deleteIfExists: Boolean,
-        deleteOnClose: Boolean
+        deleteOnClose:  Boolean
     ): Stream[F, Socket[F]] = {
       def setup =
         Files[F].deleteIfExists(Path(address.path)).whenA(deleteIfExists) *>
@@ -95,10 +94,10 @@ private[unixsocket] trait UnixSocketsCompanionPlatform {
     }(_ => Async[F].delay(if (ch.isOpen) ch.close else ()))
 
   private final class AsyncSocket[F[_]](
-      ch: SocketChannel,
-      readSemaphore: Semaphore[F],
+      ch:             SocketChannel,
+      readSemaphore:  Semaphore[F],
       writeSemaphore: Semaphore[F]
-  )(implicit F: Async[F])
+  )(implicit F:       Async[F])
       extends Socket.BufferedReads[F](readSemaphore) {
 
     def readChunk(buff: ByteBuffer): F[Int] =
@@ -115,18 +114,18 @@ private[unixsocket] trait UnixSocketsCompanionPlatform {
       }
     }
 
-    def localAddress: F[SocketAddress[IpAddress]] = raiseIpAddressError
-    def remoteAddress: F[SocketAddress[IpAddress]] = raiseIpAddressError
-    private def raiseIpAddressError[A]: F[A] =
+    def localAddress:                   F[SocketAddress[IpAddress]] = raiseIpAddressError
+    def remoteAddress:                  F[SocketAddress[IpAddress]] = raiseIpAddressError
+    private def raiseIpAddressError[A]: F[A]                        =
       F.raiseError(new UnsupportedOperationException("UnixSockets do not use IP addressing"))
 
-    def isOpen: F[Boolean] = F.blocking(ch.isOpen)
-    def close: F[Unit] = F.blocking(ch.close())
-    def endOfOutput: F[Unit] =
+    def isOpen:      F[Boolean] = F.blocking(ch.isOpen)
+    def close:       F[Unit]    = F.blocking(ch.close())
+    def endOfOutput: F[Unit]    =
       F.blocking {
         ch.shutdownOutput(); ()
       }
-    def endOfInput: F[Unit] =
+    def endOfInput:  F[Unit]    =
       F.blocking {
         ch.shutdownInput(); ()
       }

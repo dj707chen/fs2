@@ -79,11 +79,11 @@ import fs2.internal.InterruptContext.InterruptionOutcome
   *                       that eventually allows interruption while eval is evaluating.
   */
 private[fs2] final class Scope[F[_]] private (
-    val id: Unique.Token,
-    private val parent: Option[Scope[F]],
+    val id:                    Unique.Token,
+    private val parent:        Option[Scope[F]],
     private val interruptible: Option[InterruptContext[F]],
-    private val state: Ref[F, Scope.State[F]]
-)(implicit val F: Compiler.Target[F]) { self =>
+    private val state:         Ref[F, Scope.State[F]]
+)(implicit val F:              Compiler.Target[F]) { self =>
 
   def isRoot: Boolean = parent.isEmpty
 
@@ -148,7 +148,7 @@ private[fs2] final class Scope[F[_]] private (
       state
         .modify {
           case s: Scope.State.Closed[F] => (s, None)
-          case s: Scope.State.Open[F] =>
+          case s: Scope.State.Open[F]   =>
             (s.copy(children = scope +: s.children), Some(scope))
         }
         .flatMap {
@@ -195,7 +195,7 @@ private[fs2] final class Scope[F[_]] private (
                   register(resource).flatMap {
                     case false =>
                       finalizer(Resource.ExitCase.Canceled).as(Left(AcquireAfterScopeClosed))
-                    case true => F.pure(Right(r))
+                    case true  => F.pure(Right(r))
                   }
                 } else {
                   finalizer(Resource.ExitCase.Canceled)
@@ -207,12 +207,12 @@ private[fs2] final class Scope[F[_]] private (
         }
       }
     }.map {
-      case Left(Outcome.Errored(t)) => Outcome.Errored(t)
-      case Left(Outcome.Canceled()) => Outcome.Canceled()
+      case Left(Outcome.Errored(t))       => Outcome.Errored(t)
+      case Left(Outcome.Canceled())       => Outcome.Canceled()
       case Left(Outcome.Succeeded(token)) =>
         Outcome.Succeeded[Id, Throwable, Either[Unique.Token, R]](Left(token))
-      case Right(Left(t))  => Outcome.Errored(t)
-      case Right(Right(r)) => Outcome.Succeeded[Id, Throwable, Either[Unique.Token, R]](Right(r))
+      case Right(Left(t))                 => Outcome.Errored(t)
+      case Right(Right(r))                => Outcome.Succeeded[Id, Throwable, Either[Unique.Token, R]](Right(r))
     }
 
   /** Unregisters the child scope identified by the supplied id.
@@ -238,7 +238,7 @@ private[fs2] final class Scope[F[_]] private (
     */
   private def traverseError[A](
       ca: Chain[A],
-      f: A => F[Either[Throwable, Unit]]
+      f:  A => F[Either[Throwable, Unit]]
   ): F[Either[Throwable, Unit]] =
     Traverse[Chain].traverse(ca)(f).map { results =>
       CompositeFailure
@@ -260,12 +260,12 @@ private[fs2] final class Scope[F[_]] private (
     */
   def close(ec: Resource.ExitCase): F[Either[Throwable, Unit]] =
     state.modify(s => Scope.State.closed -> s).flatMap {
-      case previous: Scope.State.Open[F] =>
+      case previous: Scope.State.Open[F]   =>
         for {
-          resultChildren <- traverseError[Scope[F]](previous.children, _.close(ec))
+          resultChildren  <- traverseError[Scope[F]](previous.children, _.close(ec))
           resultResources <- traverseError[ScopedResource[F]](previous.resources, _.release(ec))
-          _ <- self.interruptible.map(_.cancelParent).getOrElse(F.unit)
-          _ <- self.parent.fold(F.unit)(_.releaseChildScope(self.id))
+          _               <- self.interruptible.map(_.cancelParent).getOrElse(F.unit)
+          _               <- self.parent.fold(F.unit)(_.releaseChildScope(self.id))
         } yield {
           val results = resultChildren.fold(List(_), _ => Nil) ++ resultResources.fold(
             List(_),
@@ -273,7 +273,7 @@ private[fs2] final class Scope[F[_]] private (
           )
           CompositeFailure.fromList(results.toList).toLeft(())
         }
-      case _: Scope.State.Closed[F] => F.pure(Right(()))
+      case _:        Scope.State.Closed[F] => F.pure(Right(()))
     }
 
   /** Like `openAncestor` but returns self if open. */
@@ -331,12 +331,12 @@ private[fs2] final class Scope[F[_]] private (
   private def findSelfOrChild(scopeId: Unique.Token): F[Option[Scope[F]]] = {
     def go(scopes: Chain[Scope[F]]): F[Option[Scope[F]]] =
       scopes.uncons match {
-        case None => F.pure(None)
+        case None                => F.pure(None)
         case Some((scope, tail)) =>
           if (scope.id == scopeId) F.pure(Some(scope))
           else
             scope.state.get.flatMap {
-              case s: Scope.State.Open[F] =>
+              case s: Scope.State.Open[F]   =>
                 if (s.children.isEmpty) go(tail)
                 else
                   go(s.children).flatMap {
@@ -360,7 +360,7 @@ private[fs2] final class Scope[F[_]] private (
   def shiftScope(scopeId: Unique.Token, context: => String): F[Scope[F]] =
     findStepScope(scopeId).flatMap {
       case Some(scope) => F.pure(scope)
-      case None =>
+      case None        =>
         val msg =
           s"""|Scope lookup failure!
               |
@@ -391,7 +391,7 @@ private[fs2] final class Scope[F[_]] private (
     if (scopeId == self.id) F.pure(Some(self))
     else
       self.parent match {
-        case None => self.findSelfOrChild(scopeId)
+        case None         => self.findSelfOrChild(scopeId)
         case Some(parent) =>
           parent.findSelfOrChild(scopeId).flatMap {
             case Some(scope) => F.pure(Some(scope))
@@ -402,11 +402,11 @@ private[fs2] final class Scope[F[_]] private (
 
   def interruptWhen(haltWhen: F[Either[Throwable, Unit]]): F[Fiber[F, Throwable, Unit]] =
     interruptible match {
-      case None =>
+      case None       =>
         // Interruption is a no-op when there is no interruption context
         F.pure(new Fiber[F, Throwable, Unit] {
-          def cancel: F[Unit] = F.unit
-          def join: F[Outcome[F, Throwable, Unit]] =
+          def cancel: F[Unit]                        = F.unit
+          def join:   F[Outcome[F, Throwable, Unit]] =
             F.pure(Outcome.Succeeded(F.unit))
         })
       case Some(iCtx) =>
@@ -445,7 +445,7 @@ private[fs2] final class Scope[F[_]] private (
     */
   private[fs2] def interruptibleEval[A](f: F[A]): F[Either[InterruptionOutcome, A]] =
     openScope.map(_.interruptible).flatMap {
-      case None =>
+      case None       =>
         f.attempt.map(_.leftMap(t => Outcome.Errored(t)))
       case Some(iCtx) =>
         iCtx.eval(f)
@@ -469,14 +469,14 @@ private[fs2] final class Scope[F[_]] private (
     */
   def lease: F[Lease[F]] =
     for {
-      children <- state.get.flatMap[Chain[Scope[F]]] {
-        case x: Scope.State.Open[F] => F.pure(x.children)
-        case _: Scope.State.Closed[F] =>
-          F.raiseError(new RuntimeException("Scope closed at time of lease"))
-      }
-      allScopes = (children :+ self) ++ ancestors
+      children     <- state.get.flatMap[Chain[Scope[F]]] {
+                        case x: Scope.State.Open[F]   => F.pure(x.children)
+                        case _: Scope.State.Closed[F] =>
+                          F.raiseError(new RuntimeException("Scope closed at time of lease"))
+                      }
+      allScopes     = (children :+ self) ++ ancestors
       allResources <- allScopes.flatTraverse(_.resources)
-      allLeases <- allResources.traverseFilter(_.lease)
+      allLeases    <- allResources.traverseFilter(_.lease)
     } yield new Lease[F] {
       def cancel: F[Either[Throwable, Unit]] = traverseError[Lease[F]](allLeases, _.cancel)
     }
@@ -488,10 +488,10 @@ private[fs2] final class Scope[F[_]] private (
 private[fs2] object Scope {
 
   private def apply[F[_]](
-      id: Unique.Token,
-      parent: Option[Scope[F]],
+      id:            Unique.Token,
+      parent:        Option[Scope[F]],
       interruptible: Option[InterruptContext[F]]
-  )(implicit F: Compiler.Target[F]): F[Scope[F]] =
+  )(implicit F:      Compiler.Target[F]): F[Scope[F]] =
     F.ref(Scope.State.initial[F])
       .map(state => new Scope[F](id, parent, interruptible, state))
 
@@ -510,8 +510,7 @@ private[fs2] object Scope {
       *                           split to multiple asynchronously acquired scopes and resources.
       *                           Still, likewise for resources they are released in reverse order.
       */
-    case class Open[F[_]](resources: Chain[ScopedResource[F]], children: Chain[Scope[F]])
-        extends State[F] { self =>
+    case class Open[F[_]](resources: Chain[ScopedResource[F]], children: Chain[Scope[F]]) extends State[F] { self =>
       def unregisterChild(id: Unique.Token): State[F] =
         self.children.deleteFirst(_.id == id) match {
           case Some((_, newChildren)) => self.copy(children = newChildren)

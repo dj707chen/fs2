@@ -31,7 +31,7 @@ class ByteBufferChunkBenchmark {
   var size: Int = _
 
   var bbIndirect: ByteBuffer = _
-  var bbDirect: ByteBuffer = _
+  var bbDirect:   ByteBuffer = _
 
   @Setup
   def setup() = {

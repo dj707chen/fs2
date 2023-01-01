@@ -114,16 +114,16 @@ trait Signal[F[_], A] {
 object Signal extends SignalInstances {
   def constant[F[_], A](a: A)(implicit F: Concurrent[F]): Signal[F, A] =
     new Signal[F, A] {
-      def get: F[A] = F.pure(a)
+      def get:        F[A]            = F.pure(a)
       def continuous: Stream[Pure, A] = Stream.constant(a)
-      def discrete: Stream[F, A] = Stream(a) ++ Stream.never
+      def discrete:   Stream[F, A]    = Stream(a) ++ Stream.never
     }
 
   def mapped[F[_]: Functor, A, B](fa: Signal[F, A])(f: A => B): Signal[F, B] =
     new Signal[F, B] {
       def continuous: Stream[F, B] = fa.continuous.map(f)
-      def discrete: Stream[F, B] = fa.discrete.map(f)
-      def get: F[B] = Functor[F].map(fa.get)(f)
+      def discrete:   Stream[F, B] = fa.discrete.map(f)
+      def get:        F[B]         = Functor[F].map(fa.get)(f)
     }
 
   implicit class SignalOps[F[_], A](val self: Signal[F, A]) extends AnyVal {
@@ -196,9 +196,9 @@ object SignallingRef {
     */
   def of[F[_], A](initial: A)(implicit F: Concurrent[F]): F[SignallingRef[F, A]] = {
     case class State(
-        value: A,
+        value:      A,
         lastUpdate: Long,
-        listeners: LongMap[Deferred[F, (A, Long)]]
+        listeners:  LongMap[Deferred[F, (A, Long)]]
     )
 
     F.ref(State(initial, 0L, LongMap.empty))
@@ -208,9 +208,9 @@ object SignallingRef {
 
         def updateAndNotify[B](state: State, f: A => (A, B)): (State, F[B]) = {
           val (newValue, result) = f(state.value)
-          val lastUpdate = state.lastUpdate + 1
-          val newState = State(newValue, lastUpdate, LongMap.empty)
-          val notifyListeners = state.listeners.values.toVector.traverse_ { listener =>
+          val lastUpdate         = state.lastUpdate + 1
+          val newState           = State(newValue, lastUpdate, LongMap.empty)
+          val notifyListeners    = state.listeners.values.toVector.traverse_ { listener =>
             listener.complete(newValue -> lastUpdate)
           }
 
@@ -227,8 +227,8 @@ object SignallingRef {
               def getNext: F[(A, Long)] =
                 F.deferred[(A, Long)].flatMap { wait =>
                   state.modify { case state @ State(value, lastUpdate, listeners) =>
-                    if (lastUpdate != lastSeen)
-                      state -> (value -> lastUpdate).pure[F]
+                    if (lastUpdate                                     != lastSeen)
+                      state                                            -> (value -> lastUpdate).pure[F]
                     else
                       state.copy(listeners = listeners + (id -> wait)) -> wait.get
                   }.flatten
@@ -293,13 +293,13 @@ object SignallingRef {
     */
   def lens[F[_], A, B](
       ref: SignallingRef[F, A]
-  )(get: A => B, set: A => B => A)(implicit F: Functor[F]): SignallingRef[F, B] =
+  )(get:   A => B, set: A => B => A)(implicit F: Functor[F]): SignallingRef[F, B] =
     new LensSignallingRef(ref)(get, set)
 
   private final class LensSignallingRef[F[_], A, B](underlying: SignallingRef[F, A])(
-      lensGet: A => B,
-      lensSet: A => B => A
-  )(implicit F: Functor[F])
+      lensGet:                                                  A => B,
+      lensSet:                                                  A => B => A
+  )(implicit F:                                                 Functor[F])
       extends SignallingRef[F, B] {
 
     def discrete: Stream[F, B] = underlying.discrete.map(lensGet)
@@ -318,7 +318,7 @@ object SignallingRef {
 
     def modify[C](f: B => (B, C)): F[C] =
       underlying.modify { a =>
-        val oldB = lensGet(a)
+        val oldB   = lensGet(a)
         val (b, c) = f(oldB)
         (lensSet(a)(b), c)
       }
@@ -328,7 +328,7 @@ object SignallingRef {
 
     def tryModify[C](f: B => (B, C)): F[Option[C]] =
       underlying.tryModify { a =>
-        val oldB = lensGet(a)
+        val oldB        = lensGet(a)
         val (b, result) = f(oldB)
         (lensSet(a)(b), result)
       }
@@ -356,27 +356,27 @@ object SignallingRef {
     new Invariant[SignallingRef[F, *]] {
       override def imap[A, B](fa: SignallingRef[F, A])(f: A => B)(g: B => A): SignallingRef[F, B] =
         new SignallingRef[F, B] {
-          def get: F[B] = fa.get.map(f)
-          def discrete: Stream[F, B] = fa.discrete.map(f)
+          def get:        F[B]         = fa.get.map(f)
+          def discrete:   Stream[F, B] = fa.discrete.map(f)
           def continuous: Stream[F, B] = fa.continuous.map(f)
           def set(b: B): F[Unit] = fa.set(g(b))
-          def access: F[(B, B => F[Boolean])] =
+          def access:                                          F[(B, B => F[Boolean])] =
             fa.access.map { case (getter, setter) =>
               (f(getter), b => setter(g(b)))
             }
           def tryUpdate(h: B => B): F[Boolean] = fa.tryUpdate(a => g(h(f(a))))
-          def tryModify[B2](h: B => (B, B2)): F[Option[B2]] =
+          def tryModify[B2](h: B => (B, B2)):                  F[Option[B2]]           =
             fa.tryModify(a => h(f(a)).leftMap(g))
-          def update(bb: B => B): F[Unit] =
+          def update(bb: B => B):                              F[Unit]                 =
             modify(b => (bb(b), ()))
-          def modify[B2](bb: B => (B, B2)): F[B2] =
+          def modify[B2](bb: B => (B, B2)):                    F[B2]                   =
             fa.modify { a =>
               val (a2, b2) = bb(f(a))
               g(a2) -> b2
             }
-          def tryModifyState[C](state: cats.data.State[B, C]): F[Option[C]] =
+          def tryModifyState[C](state: cats.data.State[B, C]): F[Option[C]]            =
             fa.tryModifyState(state.dimap(f)(g))
-          def modifyState[C](state: cats.data.State[B, C]): F[C] =
+          def modifyState[C](state: cats.data.State[B, C]):    F[C]                    =
             fa.modifyState(state.dimap(f)(g))
         }
     }
@@ -392,12 +392,12 @@ object SignallingMapRef {
   /** Builds a `SignallingMapRef` for effect `F`, initialized to the supplied value.
     */
   def ofSingleImmutableMap[F[_], K, V](
-      initial: Map[K, V] = Map.empty[K, V]
+      initial:  Map[K, V] = Map.empty[K, V]
   )(implicit F: Concurrent[F]): F[SignallingMapRef[F, K, Option[V]]] = {
     case class State(
-        value: Map[K, V],
+        value:      Map[K, V],
         lastUpdate: Long,
-        listeners: Map[K, LongMap[Deferred[F, (Option[V], Long)]]]
+        listeners:  Map[K, LongMap[Deferred[F, (Option[V], Long)]]]
     )
 
     F.ref(State(initial, 0L, initial.flatMap(_ => Nil)))
@@ -405,14 +405,13 @@ object SignallingMapRef {
       .map { case (state, ids) =>
         def newId = ids.getAndUpdate(_ + 1)
 
-        def updateAndNotify[U](state: State, k: K, f: Option[V] => (Option[V], U))
-            : (State, F[U]) = {
+        def updateAndNotify[U](state: State, k: K, f: Option[V] => (Option[V], U)): (State, F[U]) = {
           val (newValue, result) = f(state.value.get(k))
-          val newMap = newValue.fold(state.value - k)(v => state.value + (k -> v))
-          val lastUpdate = state.lastUpdate + 1
-          val newListeners = state.listeners - k
-          val newState = State(newMap, lastUpdate, newListeners)
-          val notifyListeners = state.listeners.get(k).fold(F.unit) { listeners =>
+          val newMap             = newValue.fold(state.value - k)(v => state.value + (k -> v))
+          val lastUpdate         = state.lastUpdate + 1
+          val newListeners       = state.listeners - k
+          val newState           = State(newMap, lastUpdate, newListeners)
+          val notifyListeners    = state.listeners.get(k).fold(F.unit) { listeners =>
             listeners.values.toVector.traverse_ { listener =>
               listener.complete(newValue -> lastUpdate)
             }
@@ -433,7 +432,7 @@ object SignallingMapRef {
                   F.deferred[(Option[V], Long)].flatMap { wait =>
                     state.modify { case state @ State(value, lastUpdate, listeners) =>
                       if (lastUpdate != lastSeen)
-                        state -> (value.get(k) -> lastUpdate).pure[F]
+                        state        -> (value.get(k) -> lastUpdate).pure[F]
                       else {
                         val newListeners =
                           listeners
@@ -514,12 +513,12 @@ private[concurrent] trait SignalInstances extends SignalLowPriorityInstances {
 
       val firstPull: OptionT[Pull[F, PullOutput, *], Unit] = for {
         firstXAndRestOfXs <- OptionT(xs.pull.uncons1.covaryOutput[PullOutput])
-        (x, restOfXs) = firstXAndRestOfXs
+        (x, restOfXs)      = firstXAndRestOfXs
         firstYAndRestOfYs <- OptionT(ys.pull.uncons1.covaryOutput[PullOutput])
-        (y, restOfYs) = firstYAndRestOfYs
-        _ <- OptionT.liftF {
-          Pull.output1[F, PullOutput]((x, y, restOfXs, restOfYs)): Pull[F, PullOutput, Unit]
-        }
+        (y, restOfYs)      = firstYAndRestOfYs
+        _                 <- OptionT.liftF {
+                               Pull.output1[F, PullOutput]((x, y, restOfXs, restOfYs)): Pull[F, PullOutput, Unit]
+                             }
       } yield ()
 
       firstPull.value.void.stream

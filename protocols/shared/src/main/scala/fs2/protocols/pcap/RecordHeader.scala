@@ -30,12 +30,12 @@ import scodec.codecs._
 
 case class RecordHeader(
     timestampSeconds: Long,
-    timestampMicros: Long,
-    includedLength: Long,
-    originalLength: Long
+    timestampMicros:  Long,
+    includedLength:   Long,
+    originalLength:   Long
 ) {
-  def timestamp: FiniteDuration = RecordHeader.timestamp(timestampSeconds, timestampMicros)
-  def fullPayload: Boolean = includedLength == originalLength
+  def timestamp:   FiniteDuration = RecordHeader.timestamp(timestampSeconds, timestampMicros)
+  def fullPayload: Boolean        = includedLength == originalLength
 }
 
 object RecordHeader {

@@ -79,7 +79,7 @@ private[fs2] trait FilesCompanionPlatform {
       open(path, Flags(Flag.CreateNew), permissions).use_
 
     override def createLink(
-        link: Path,
+        link:     Path,
         existing: Path
     ): F[Unit] =
       F.fromPromise(
@@ -87,8 +87,8 @@ private[fs2] trait FilesCompanionPlatform {
       ).adaptError { case IOException(ex) => ex }
 
     override def createSymbolicLink(
-        link: Path,
-        target: Path,
+        link:        Path,
+        target:      Path,
         permissions: Option[Permissions]
     ): F[Unit] =
       (F.fromPromise(
@@ -96,12 +96,12 @@ private[fs2] trait FilesCompanionPlatform {
       ) >> (permissions match {
         case Some(PosixPermissions(value)) =>
           F.fromPromise(F.delay(facade.fs.promises.lchmod(link.toString, value.toDouble)))
-        case _ => F.unit
+        case _                             => F.unit
       })).adaptError { case IOException(ex) => ex }
 
     override def createTempDirectory(
-        dir: Option[Path],
-        prefix: String,
+        dir:         Option[Path],
+        prefix:      String,
         permissions: Option[Permissions]
     ): F[Path] =
       F.fromPromise(
@@ -117,20 +117,20 @@ private[fs2] trait FilesCompanionPlatform {
         .adaptError { case IOException(ex) => ex }
 
     override def createTempFile(
-        dir: Option[Path],
-        prefix: String,
-        suffix: String,
+        dir:         Option[Path],
+        prefix:      String,
+        suffix:      String,
         permissions: Option[Permissions]
     ): F[Path] =
       for {
         dir <- createTempDirectory(dir, prefix, permissions)
         path = dir / Option(suffix).filter(_.nonEmpty).getOrElse(".tmp")
-        _ <- open(path, Flags.Write).use_
-        _ <- permissions
-          .collect { case posix @ PosixPermissions(_) =>
-            posix
-          }
-          .fold(F.unit)(setPosixPermissions(path, _))
+        _   <- open(path, Flags.Write).use_
+        _   <- permissions
+                 .collect { case posix @ PosixPermissions(_) =>
+                   posix
+                 }
+                 .fold(F.unit)(setPosixPermissions(path, _))
       } yield path
 
     private def rmMaybeDir(path: Path): F[Unit] =
@@ -159,7 +159,7 @@ private[fs2] trait FilesCompanionPlatform {
       }
 
     override def deleteRecursively(
-        path: Path,
+        path:        Path,
         followLinks: Boolean
     ): F[Unit] =
       if (!followLinks)
@@ -217,18 +217,18 @@ private[fs2] trait FilesCompanionPlatform {
     def getPosixFileAttributes(path: Path, followLinks: Boolean): F[PosixFileAttributes] =
       stat(path, followLinks).map { stats =>
         new PosixFileAttributes.UnsealedPosixFileAttributes {
-          def creationTime: FiniteDuration = stats.ctimeNs.toString.toLong.nanos
-          def fileKey: Option[FileKey] = if (stats.dev != js.BigInt(0) || stats.ino != js.BigInt(0))
+          def creationTime:     FiniteDuration   = stats.ctimeNs.toString.toLong.nanos
+          def fileKey:          Option[FileKey]  = if (stats.dev != js.BigInt(0) || stats.ino != js.BigInt(0))
             Some(PosixFileKey(stats.dev.toString.toLong, stats.ino.toString.toLong))
           else None
-          def isDirectory: Boolean = stats.isDirectory()
-          def isOther: Boolean = !isDirectory && !isRegularFile && !isSymbolicLink
-          def isRegularFile: Boolean = stats.isFile()
-          def isSymbolicLink: Boolean = stats.isSymbolicLink()
-          def lastAccessTime: FiniteDuration = stats.atimeNs.toString.toLong.nanos
-          def lastModifiedTime: FiniteDuration = stats.mtimeNs.toString.toLong.nanos
-          def size: Long = stats.size.toString.toLong
-          def permissions: PosixPermissions = {
+          def isDirectory:      Boolean          = stats.isDirectory()
+          def isOther:          Boolean          = !isDirectory && !isRegularFile && !isSymbolicLink
+          def isRegularFile:    Boolean          = stats.isFile()
+          def isSymbolicLink:   Boolean          = stats.isSymbolicLink()
+          def lastAccessTime:   FiniteDuration   = stats.atimeNs.toString.toLong.nanos
+          def lastModifiedTime: FiniteDuration   = stats.mtimeNs.toString.toLong.nanos
+          def size:             Long             = stats.size.toString.toLong
+          def permissions:      PosixPermissions = {
             val value = stats.mode.toString.toInt & 511
             PosixPermissions.fromInt(value).get
           }
@@ -266,9 +266,7 @@ private[fs2] trait FilesCompanionPlatform {
 
     override def list(path: Path): Stream[F, Path] =
       Stream
-        .bracket(F.fromPromise(F.delay(facade.fs.promises.opendir(path.toString))))(dir =>
-          F.fromPromise(F.delay(dir.close()))
-        )
+        .bracket(F.fromPromise(F.delay(facade.fs.promises.opendir(path.toString))))(dir => F.fromPromise(F.delay(dir.close())))
         .flatMap { dir =>
           Stream
             .repeatEval(F.fromPromise(F.delay(dir.read())))
@@ -293,9 +291,9 @@ private[fs2] trait FilesCompanionPlatform {
       open(path, flags, None)
 
     private def open(
-        path: Path,
+        path:  Path,
         flags: Flags,
-        mode: Option[Permissions]
+        mode:  Option[Permissions]
     ): Resource[F, FileHandle[F]] = Resource
       .make(
         F.fromPromise(
@@ -318,7 +316,7 @@ private[fs2] trait FilesCompanionPlatform {
       .adaptError { case IOException(ex) => ex }
 
     private def readStream(path: Path, chunkSize: Int, _flags: Flags)(
-        f: facade.fs.ReadStreamOptions => facade.fs.ReadStreamOptions
+        f:                       facade.fs.ReadStreamOptions => facade.fs.ReadStreamOptions
     ): Stream[F, Byte] =
       Stream
         .resource(suspendReadableAndRead() {
@@ -336,16 +334,16 @@ private[fs2] trait FilesCompanionPlatform {
       readStream(path, chunkSize, flags)(identity)
 
     def realPath(path: Path): F[Path] =
-      F.fromPromise(F.delay(facade.fs.promises.realpath(path.toString))).map(Path(_)).adaptError {
-        case NoSuchFileException(e) => e
+      F.fromPromise(F.delay(facade.fs.promises.realpath(path.toString))).map(Path(_)).adaptError { case NoSuchFileException(e) =>
+        e
       }
 
     override def setFileTimes(
-        path: Path,
+        path:         Path,
         lastModified: Option[FiniteDuration],
-        lastAccess: Option[FiniteDuration],
-        create: Option[FiniteDuration],
-        followLinks: Boolean
+        lastAccess:   Option[FiniteDuration],
+        create:       Option[FiniteDuration],
+        followLinks:  Boolean
     ): F[Unit] = stat(path, followLinks)
       .flatMap { stats =>
         F.fromPromise(

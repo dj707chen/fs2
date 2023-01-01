@@ -60,50 +60,50 @@ private[unixsocket] trait UnixSocketsCompanionPlatform {
           .flatMap(Socket.forAsync[F])
 
       override def server(
-          address: UnixSocketAddress,
+          address:        UnixSocketAddress,
           deleteIfExists: Boolean,
-          deleteOnClose: Boolean
+          deleteOnClose:  Boolean
       ): fs2.Stream[F, Socket[F]] =
         for {
           dispatcher <- Stream.resource(Dispatcher.sequential[F])
-          channel <- Stream.eval(Channel.unbounded[F, facade.net.Socket])
-          errored <- Stream.eval(F.deferred[js.JavaScriptException])
-          server <- Stream.bracket(
-            F.delay {
-              facade.net.createServer(
-                new facade.net.ServerOptions {
-                  pauseOnConnect = true
-                  allowHalfOpen = true
-                },
-                sock => dispatcher.unsafeRunAndForget(channel.send(sock))
-              )
-            }
-          )(server =>
-            F.async_[Unit] { cb =>
-              if (server.listening) {
-                server.close(e => cb(e.toLeft(()).leftMap(js.JavaScriptException)))
-                ()
-              } else
-                cb(Right(()))
-            }
-          )
-          _ <- Stream
-            .resource(
-              server.registerListener[F, js.Error]("error", dispatcher) { e =>
-                errored.complete(js.JavaScriptException(e)).void
-              }
-            )
-            .concurrently(Stream.eval(errored.get.flatMap(F.raiseError[Unit])))
-          _ <- Stream.bracket(
-            if (deleteIfExists) Files[F].deleteIfExists(Path(address.path)).void else F.unit
-          )(_ => if (deleteOnClose) Files[F].deleteIfExists(Path(address.path)).void else F.unit)
-          _ <- Stream.eval(
-            F.async_[Unit] { cb =>
-              server.listen(address.path, () => cb(Right(())))
-              ()
-            }
-          )
-          socket <- channel.stream.flatMap(sock => Stream.resource(Socket.forAsync(sock)))
+          channel    <- Stream.eval(Channel.unbounded[F, facade.net.Socket])
+          errored    <- Stream.eval(F.deferred[js.JavaScriptException])
+          server     <- Stream.bracket(
+                          F.delay {
+                            facade.net.createServer(
+                              new facade.net.ServerOptions {
+                                pauseOnConnect = true
+                                allowHalfOpen = true
+                              },
+                              sock => dispatcher.unsafeRunAndForget(channel.send(sock))
+                            )
+                          }
+                        )(server =>
+                          F.async_[Unit] { cb =>
+                            if (server.listening) {
+                              server.close(e => cb(e.toLeft(()).leftMap(js.JavaScriptException)))
+                              ()
+                            } else
+                              cb(Right(()))
+                          }
+                        )
+          _          <- Stream
+                          .resource(
+                            server.registerListener[F, js.Error]("error", dispatcher) { e =>
+                              errored.complete(js.JavaScriptException(e)).void
+                            }
+                          )
+                          .concurrently(Stream.eval(errored.get.flatMap(F.raiseError[Unit])))
+          _          <- Stream.bracket(
+                          if (deleteIfExists) Files[F].deleteIfExists(Path(address.path)).void else F.unit
+                        )(_ => if (deleteOnClose) Files[F].deleteIfExists(Path(address.path)).void else F.unit)
+          _          <- Stream.eval(
+                          F.async_[Unit] { cb =>
+                            server.listen(address.path, () => cb(Right(())))
+                            ()
+                          }
+                        )
+          socket     <- channel.stream.flatMap(sock => Stream.resource(Socket.forAsync(sock)))
         } yield socket
 
     }

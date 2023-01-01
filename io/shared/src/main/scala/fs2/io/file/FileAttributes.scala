@@ -33,15 +33,15 @@ import scala.concurrent.duration.FiniteDuration
   * and file system supports providing such an identifier.
   */
 sealed trait BasicFileAttributes {
-  def creationTime: FiniteDuration
-  def fileKey: Option[FileKey]
-  def isDirectory: Boolean
-  def isOther: Boolean
-  def isRegularFile: Boolean
-  def isSymbolicLink: Boolean
-  def lastAccessTime: FiniteDuration
+  def creationTime:     FiniteDuration
+  def fileKey:          Option[FileKey]
+  def isDirectory:      Boolean
+  def isOther:          Boolean
+  def isRegularFile:    Boolean
+  def isSymbolicLink:   Boolean
+  def lastAccessTime:   FiniteDuration
   def lastModifiedTime: FiniteDuration
-  def size: Long
+  def size:             Long
 }
 
 object BasicFileAttributes {

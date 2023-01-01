@@ -36,9 +36,9 @@ trait DatagramSocketGroup[F[_]] {
     * @param protocolFamily       protocol family to use when opening the supporting `DatagramChannel`
     */
   def openDatagramSocket(
-      address: Option[Host] = None,
-      port: Option[Port] = None,
-      options: List[DatagramSocketOption] = Nil,
+      address:        Option[Host] = None,
+      port:           Option[Port] = None,
+      options:        List[DatagramSocketOption] = Nil,
       protocolFamily: Option[DatagramSocketGroup.ProtocolFamily] = None
   ): Resource[F, DatagramSocket[F]]
 }

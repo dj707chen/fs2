@@ -50,14 +50,14 @@ package dgram {
     def dropMembership(multicastAddress: String, multicastInterface: String): Unit = js.native
 
     def addSourceSpecificMembership(
-        sourceAddress: String,
-        groupAddress: String,
+        sourceAddress:      String,
+        groupAddress:       String,
         multicastInterface: String
     ): Unit = js.native
 
     def dropSourceSpecificMembership(
-        sourceAddress: String,
-        groupAddress: String,
+        sourceAddress:      String,
+        groupAddress:       String,
         multicastInterface: String
     ): Unit = js.native
 
@@ -85,21 +85,21 @@ package dgram {
   @js.native
   private[io] trait AddressInfo extends js.Object {
     def address: String = js.native
-    def family: Int = js.native
-    def port: Int = js.native
+    def family:  Int    = js.native
+    def port:    Int    = js.native
   }
 
   private[io] trait BindOptions extends js.Object {
-    var port: js.UndefOr[Int] = js.undefined
+    var port:    js.UndefOr[Int]    = js.undefined
     var address: js.UndefOr[String] = js.undefined
   }
 
   @js.native
   private[io] trait RemoteInfo extends js.Object {
     def address: String = js.native
-    def family: Int = js.native
-    def port: Int = js.native
-    def size: Int = js.native
+    def family:  Int    = js.native
+    def port:    Int    = js.native
+    def size:    Int    = js.native
   }
 
 }

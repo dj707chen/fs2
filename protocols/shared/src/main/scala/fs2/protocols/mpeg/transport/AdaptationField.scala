@@ -33,10 +33,10 @@ import scodec.compat._
   * The field extension, if present, is ignored upon decoding.
   */
 case class AdaptationField(
-    flags: Option[AdaptationFieldFlags],
-    pcr: Option[Clock27MHz],
-    opcr: Option[Clock27MHz],
-    spliceCountdown: Option[Int],
+    flags:                Option[AdaptationFieldFlags],
+    pcr:                  Option[Clock27MHz],
+    opcr:                 Option[Clock27MHz],
+    spliceCountdown:      Option[Int],
     transportPrivateData: Option[BitVector]
 )
 
@@ -46,30 +46,30 @@ object AdaptationField {
 
   implicit val codec: Codec[AdaptationField] = new Codec[AdaptationField] {
     private case class NonEmptyAF(
-        flags: AdaptationFieldFlags,
-        pcr: Option[Clock27MHz],
-        opcr: Option[Clock27MHz],
-        spliceCountdown: Option[Int],
+        flags:                AdaptationFieldFlags,
+        pcr:                  Option[Clock27MHz],
+        opcr:                 Option[Clock27MHz],
+        spliceCountdown:      Option[Int],
         transportPrivateData: Option[BitVector]
     ) {
       def asAF: AdaptationField =
         AdaptationField(Some(flags), pcr, opcr, spliceCountdown, transportPrivateData)
     }
 
-    private val pcrCodec: Codec[Clock27MHz] =
+    private val pcrCodec:             Codec[Clock27MHz] =
       ((ulong(33) <~ ignore(6)) :: uint(9)).xmap[Clock27MHz](
         { case base *: ext *: EmptyTuple =>
           Clock27MHz(base * 300 + ext)
         },
         { clock =>
           val value = clock.value
-          val base = value / 300
-          val ext = (value % 300).toInt
+          val base  = value / 300
+          val ext   = (value % 300).toInt
           base *: ext *: EmptyTuple
         }
       )
-    private val transportPrivateData: Codec[BitVector] = variableSizeBits(uint8, bits)
-    private val nonEmptyAFCodec: Codec[NonEmptyAF] = "adaptation_field" |
+    private val transportPrivateData: Codec[BitVector]  = variableSizeBits(uint8, bits)
+    private val nonEmptyAFCodec:      Codec[NonEmptyAF] = "adaptation_field" |
       variableSizeBytes(
         uint8,
         ("adaptation_flags" | Codec[AdaptationFieldFlags]).flatPrepend { flags =>

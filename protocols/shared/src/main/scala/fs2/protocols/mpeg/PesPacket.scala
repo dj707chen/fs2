@@ -53,13 +53,13 @@ object PesPacket {
       PesPacketHeader.codec.decode(buffer) match {
         case Attempt.Successful(DecodeResult(header, rest)) =>
           decodeWithHeader(prefix, header, rest)
-        case f @ Attempt.Failure(_) => f
+        case f @ Attempt.Failure(_)                         => f
       }
     } else if (
-      id == ProgramStreamMap ||
-      id == PrivateStream2 ||
-      id == ECM ||
-      id == EMM |
+      id   == ProgramStreamMap ||
+      id   == PrivateStream2 ||
+      id   == ECM ||
+      id   == EMM |
         id == ProgramStreamDirectory ||
         id == DSMCC ||
         id == `ITU-T Rec. H.222.1 type E`
@@ -75,7 +75,7 @@ object PesPacket {
   def decodeWithHeader(
       prefix: PesPacketHeaderPrefix,
       header: PesPacketHeader,
-      data: BitVector
+      data:   BitVector
   ): Attempt[DecodeResult[PesPacket]] =
     Attempt.successful(DecodeResult(WithHeader(prefix.streamId, header, data), BitVector.empty))
 }

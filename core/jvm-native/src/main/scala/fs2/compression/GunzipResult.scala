@@ -39,8 +39,8 @@ import java.time.Instant
   * @param comment File comment.
   */
 case class GunzipResult[F[_]](
-    content: Stream[F, Byte],
+    content:          Stream[F, Byte],
     modificationTime: Option[Instant] = None,
-    fileName: Option[String] = None,
-    comment: Option[String] = None
+    fileName:         Option[String] = None,
+    comment:          Option[String] = None
 )

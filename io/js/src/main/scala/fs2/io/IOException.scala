@@ -30,9 +30,7 @@ import fs2.io.net.tls.SSLException
 import scala.scalajs.js
 import scala.util.control.NoStackTrace
 
-private class JavaScriptIOException(message: String, cause: js.JavaScriptException)
-    extends IOException(message, cause)
-    with NoStackTrace
+private class JavaScriptIOException(message: String, cause: js.JavaScriptException) extends IOException(message, cause) with NoStackTrace
 
 object IOException {
   private[io] def unapply(cause: js.JavaScriptException): Option[IOException] =
@@ -51,8 +49,7 @@ object IOException {
       }
 }
 
-class InterruptedIOException(message: String = null, cause: Throwable = null)
-    extends IOException(message, cause)
+class InterruptedIOException(message: String = null, cause: Throwable = null) extends IOException(message, cause)
 
 object InterruptedIOException {
   private[io] def unapply(cause: js.JavaScriptException): Option[InterruptedIOException] =

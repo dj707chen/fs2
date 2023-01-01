@@ -37,18 +37,18 @@ import scala.scalajs.js.JSConverters._
   * See [[https://nodejs.org/api/tls.html]] for detailed documentation on each parameter.
   */
 sealed trait TLSParameters { outer =>
-  val requestCert: Option[Boolean]
+  val requestCert:        Option[Boolean]
   val rejectUnauthorized: Option[Boolean]
-  val alpnProtocols: Option[List[String]]
-  val sniCallback: Option[TLSParameters.SNICallback]
+  val alpnProtocols:      Option[List[String]]
+  val sniCallback:        Option[TLSParameters.SNICallback]
 
-  val session: Option[SSLSession]
+  val session:     Option[SSLSession]
   val requestOCSP: Option[Boolean]
 
-  val pskCallback: Option[TLSParameters.PSKCallback]
-  val servername: Option[String]
+  val pskCallback:         Option[TLSParameters.PSKCallback]
+  val servername:          Option[String]
   val checkServerIdentity: Option[TLSParameters.CheckServerIdentity]
-  val minDHSize: Option[Int]
+  val minDHSize:           Option[Int]
 
   private[tls] def toTLSSocketOptions[F[_]: Async](
       dispatcher: Dispatcher[F]
@@ -84,16 +84,16 @@ object TLSParameters {
   val Default: TLSParameters = TLSParameters()
 
   def apply(
-      requestCert: Option[Boolean] = None,
-      rejectUnauthorized: Option[Boolean] = None,
-      alpnProtocols: Option[List[String]] = None,
-      sniCallback: Option[TLSParameters.SNICallback] = None,
-      session: Option[SSLSession] = None,
-      requestOCSP: Option[Boolean] = None,
-      pskCallback: Option[TLSParameters.PSKCallback] = None,
-      servername: Option[String] = None,
+      requestCert:         Option[Boolean] = None,
+      rejectUnauthorized:  Option[Boolean] = None,
+      alpnProtocols:       Option[List[String]] = None,
+      sniCallback:         Option[TLSParameters.SNICallback] = None,
+      session:             Option[SSLSession] = None,
+      requestOCSP:         Option[Boolean] = None,
+      pskCallback:         Option[TLSParameters.PSKCallback] = None,
+      servername:          Option[String] = None,
       checkServerIdentity: Option[TLSParameters.CheckServerIdentity] = None,
-      minDHSize: Option[Int] = None
+      minDHSize:           Option[Int] = None
   ): TLSParameters = DefaultTLSParameters(
     requestCert,
     rejectUnauthorized,
@@ -108,22 +108,22 @@ object TLSParameters {
   )
 
   private case class DefaultTLSParameters(
-      requestCert: Option[Boolean],
-      rejectUnauthorized: Option[Boolean],
-      alpnProtocols: Option[List[String]],
-      sniCallback: Option[TLSParameters.SNICallback],
-      session: Option[SSLSession],
-      requestOCSP: Option[Boolean],
-      pskCallback: Option[TLSParameters.PSKCallback],
-      servername: Option[String],
+      requestCert:         Option[Boolean],
+      rejectUnauthorized:  Option[Boolean],
+      alpnProtocols:       Option[List[String]],
+      sniCallback:         Option[TLSParameters.SNICallback],
+      session:             Option[SSLSession],
+      requestOCSP:         Option[Boolean],
+      pskCallback:         Option[TLSParameters.PSKCallback],
+      servername:          Option[String],
       checkServerIdentity: Option[TLSParameters.CheckServerIdentity],
-      minDHSize: Option[Int]
+      minDHSize:           Option[Int]
   ) extends TLSParameters
 
   trait SNICallback {
     def apply[F[_]: Async](servername: String): F[Either[Throwable, Option[SecureContext]]]
     private[TLSParameters] def toJS[F[_]](dispatcher: Dispatcher[F])(implicit
-        F: Async[F]
+        F:                                            Async[F]
     ): js.Function2[String, js.Function2[js.Error, js.UndefOr[
       SecureContext
     ], Unit], Unit] = { (servername, cb) =>
@@ -156,13 +156,11 @@ object TLSParameters {
   trait CheckServerIdentity {
     def apply(servername: String, cert: Chunk[Byte]): Either[Throwable, Unit]
 
-    private[TLSParameters] def toJS
-        : js.Function2[String, facade.tls.PeerCertificate, js.UndefOr[js.Error]] = {
-      (servername, cert) =>
-        apply(servername, Chunk.uint8Array(cert.raw)) match {
-          case Left(ex) => ex.toJSError
-          case _        => ()
-        }
+    private[TLSParameters] def toJS: js.Function2[String, facade.tls.PeerCertificate, js.UndefOr[js.Error]] = { (servername, cert) =>
+      apply(servername, Chunk.uint8Array(cert.raw)) match {
+        case Left(ex) => ex.toJSError
+        case _        => ()
+      }
     }
   }
 }

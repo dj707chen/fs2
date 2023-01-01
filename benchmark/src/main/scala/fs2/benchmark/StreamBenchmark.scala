@@ -25,15 +25,7 @@ package benchmark
 import cats.effect.IO
 import cats.effect.std.Queue
 import cats.effect.unsafe.implicits.global
-import org.openjdk.jmh.annotations.{
-  Benchmark,
-  BenchmarkMode,
-  Mode,
-  OutputTimeUnit,
-  Param,
-  Scope,
-  State
-}
+import org.openjdk.jmh.annotations.{Benchmark, BenchmarkMode, Mode, OutputTimeUnit, Param, Scope, State}
 
 import java.util.concurrent.TimeUnit
 
@@ -128,11 +120,11 @@ class StreamBenchmark {
   def queue() = {
     val stream = for {
       queue <- Stream.eval(Queue.unbounded[IO, Option[Int]])
-      par = Stream.emits(0 until n).repeatN(10).evalMap(x => queue.offer(Some(x))) ++ Stream.eval(
-        queue.offer(None)
-      )
-      _ <- Stream.eval(par.compile.drain.start)
-      _ <- Stream.fromQueueNoneTerminated(queue).map(x => x * 2)
+      par    = Stream.emits(0 until n).repeatN(10).evalMap(x => queue.offer(Some(x))) ++ Stream.eval(
+                 queue.offer(None)
+               )
+      _     <- Stream.eval(par.compile.drain.start)
+      _     <- Stream.fromQueueNoneTerminated(queue).map(x => x * 2)
     } yield ()
     stream.compile.drain.unsafeRunSync()
   }

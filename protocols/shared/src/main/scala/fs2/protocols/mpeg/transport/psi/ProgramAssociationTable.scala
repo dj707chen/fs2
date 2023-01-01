@@ -29,9 +29,9 @@ import scodec.Codec
 import scodec.codecs._
 
 case class ProgramAssociationTable(
-    tsid: TransportStreamId,
-    version: Int,
-    current: Boolean,
+    tsid:         TransportStreamId,
+    version:      Int,
+    current:      Boolean,
     programByPid: Map[ProgramNumber, Pid]
 ) extends Table {
   def tableId = ProgramAssociationSection.TableId
@@ -44,10 +44,10 @@ object ProgramAssociationTable {
   val MaxProgramsPerSection = 253
 
   def toSections(pat: ProgramAssociationTable): GroupedSections[ProgramAssociationSection] = {
-    val entries = pat.programByPid.toVector.sortBy { case (ProgramNumber(n), _) => n }
+    val entries        = pat.programByPid.toVector.sortBy { case (ProgramNumber(n), _) => n }
     val groupedEntries = entries.grouped(MaxProgramsPerSection).toVector
-    val lastSection = groupedEntries.size - 1
-    val sections = groupedEntries.zipWithIndex.map { case (es, idx) =>
+    val lastSection    = groupedEntries.size - 1
+    val sections       = groupedEntries.zipWithIndex.map { case (es, idx) =>
       ProgramAssociationSection(
         SectionExtension(pat.tsid.value, pat.version, pat.current, idx, lastSection),
         es
@@ -73,7 +73,7 @@ object ProgramAssociationTable {
       else Left(s"sections have diferring $name: " + extracted.mkString(", "))
     }
     for {
-      tsid <- extract("TSIDs", _.tsid)
+      tsid    <- extract("TSIDs", _.tsid)
       version <- extract("versions", _.extension.version)
     } yield {
       val current = sections.list.foldLeft(false)((acc, s) => acc || s.extension.current)
@@ -82,7 +82,7 @@ object ProgramAssociationTable {
         version,
         current,
         (for {
-          section <- sections.list
+          section    <- sections.list
           pidMapping <- section.pidMappings
         } yield pidMapping).toMap
       )
@@ -91,7 +91,7 @@ object ProgramAssociationTable {
 
   implicit val tableSupport: TableSupport[ProgramAssociationTable] =
     new TableSupport[ProgramAssociationTable] {
-      def tableId = ProgramAssociationSection.TableId
+      def tableId                               = ProgramAssociationSection.TableId
       def toTable(gs: GroupedSections[Section]) =
         gs.narrow[ProgramAssociationSection].toRight("Not PAT sections").flatMap { sections =>
           fromSections(sections)
@@ -101,7 +101,7 @@ object ProgramAssociationTable {
 }
 
 case class ProgramAssociationSection(
-    extension: SectionExtension,
+    extension:   SectionExtension,
     pidMappings: Vector[(ProgramNumber, Pid)]
 ) extends ExtendedSection {
   def tableId = ProgramAssociationSection.TableId

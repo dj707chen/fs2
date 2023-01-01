@@ -45,33 +45,33 @@ object PesScramblingControl {
 }
 
 case class PesPacketHeader(
-    pesScramblingControl: PesScramblingControl,
-    pesPriority: Boolean,
+    pesScramblingControl:   PesScramblingControl,
+    pesPriority:            Boolean,
     dataAlignmentIndicator: Boolean,
-    copyright: Boolean,
-    originalOrCopy: Boolean,
-    flags: PesPacketHeader.Flags, // TODO
-    pts: Option[Long],
-    dts: Option[Long],
-    escr: Option[Long],
-    esRate: Option[Int],
-    dsmTrickMode: Option[BitVector],
-    additionalCopyInfo: Option[BitVector],
-    pesCrc: Option[Int],
-    extension: Option[PesPacketHeader.Extension]
+    copyright:              Boolean,
+    originalOrCopy:         Boolean,
+    flags:                  PesPacketHeader.Flags, // TODO
+    pts:                    Option[Long],
+    dts:                    Option[Long],
+    escr:                   Option[Long],
+    esRate:                 Option[Int],
+    dsmTrickMode:           Option[BitVector],
+    additionalCopyInfo:     Option[BitVector],
+    pesCrc:                 Option[Int],
+    extension:              Option[PesPacketHeader.Extension]
 )
 
 object PesPacketHeader {
 
   case class Flags(
-      ptsFlag: Boolean,
-      dtsFlag: Boolean,
-      escrFlag: Boolean,
-      esRateFlag: Boolean,
-      dsmTrickModeFlag: Boolean,
+      ptsFlag:                Boolean,
+      dtsFlag:                Boolean,
+      escrFlag:               Boolean,
+      esRateFlag:             Boolean,
+      dsmTrickModeFlag:       Boolean,
       additionalCopyInfoFlag: Boolean,
-      pesCrcFlag: Boolean,
-      pesExtensionFlag: Boolean
+      pesCrcFlag:             Boolean,
+      pesExtensionFlag:       Boolean
   )
 
   object Flags {
@@ -88,11 +88,11 @@ object PesPacketHeader {
   }
 
   case class ExtensionFlags(
-      pesPrivateDataFlag: Boolean,
-      packHeaderFieldFlag: Boolean,
+      pesPrivateDataFlag:               Boolean,
+      packHeaderFieldFlag:              Boolean,
       programPacketSequenceCounterFlag: Boolean,
-      pstdBufferFlag: Boolean,
-      pesExtensionFlag2: Boolean
+      pstdBufferFlag:                   Boolean,
+      pesExtensionFlag2:                Boolean
   )
   object ExtensionFlags {
     implicit val codec: Codec[ExtensionFlags] = {
@@ -118,12 +118,12 @@ object PesPacketHeader {
   }
 
   case class Extension(
-      flags: ExtensionFlags, // TODO
-      pesPrivateData: Option[BitVector],
-      packHeaderField: Option[BitVector],
+      flags:                        ExtensionFlags, // TODO
+      pesPrivateData:               Option[BitVector],
+      packHeaderField:              Option[BitVector],
       programPacketSequenceCounter: Option[ProgramPacketSequenceCounter],
-      pstdBuffer: Option[PStdBuffer],
-      extension: Option[BitVector]
+      pstdBuffer:                   Option[PStdBuffer],
+      extension:                    Option[BitVector]
   )
   object Extension {
     implicit val codec: Codec[Extension] =
@@ -169,8 +169,8 @@ object PesPacketHeader {
       },
       l => {
         val base = (l / 300) % (2L << 32)
-        val b = BitVector.fromLong(base).drop(31)
-        val ext = (l % 300).toInt
+        val b    = BitVector.fromLong(base).drop(31)
+        val ext  = (l        % 300).toInt
         b.take(3) *: b.drop(3).take(15) *: b.drop(18) *: ext *: EmptyTuple
       }
     )

@@ -69,7 +69,7 @@ final class StreamDecoder[+A] private (private val step: StreamDecoder.Step[A]) 
       case Empty         => Pull.pure(Some(s))
       case Result(a)     => Pull.output1(a).as(Some(s))
       case Failed(cause) => Pull.raiseError(cause)
-      case Append(x, y) =>
+      case Append(x, y)  =>
         x(s).flatMap {
           case None      => Pull.pure(None)
           case Some(rem) => y()(rem)
@@ -78,38 +78,37 @@ final class StreamDecoder[+A] private (private val step: StreamDecoder.Step[A]) 
       case Decode(decoder, once, failOnErr) =>
         def loop(
             carry: BitVector,
-            s: Stream[F, BitVector]
+            s:     Stream[F, BitVector]
         ): Pull[F, A, Option[Stream[F, BitVector]]] =
           s.pull.uncons1.flatMap {
             case Some((hd, tl)) =>
               val buffer = carry ++ hd
               decoder(buffer) match {
-                case Attempt.Successful(DecodeResult(value, remainder)) =>
+                case Attempt.Successful(DecodeResult(value, remainder))                                             =>
                   val next = if (remainder.isEmpty) tl else tl.cons1(remainder)
-                  val p = value(next)
+                  val p    = value(next)
                   if (once) p
                   else
                     p.flatMap {
                       case Some(next) => loop(BitVector.empty, next)
                       case None       => Pull.pure(None)
                     }
-                case Attempt.Failure(_: Err.InsufficientBits) =>
+                case Attempt.Failure(_: Err.InsufficientBits)                                                       =>
                   loop(buffer, tl)
-                case Attempt.Failure(comp: Err.Composite)
-                    if comp.errs.exists(_.isInstanceOf[Err.InsufficientBits]) =>
+                case Attempt.Failure(comp: Err.Composite) if comp.errs.exists(_.isInstanceOf[Err.InsufficientBits]) =>
                   loop(buffer, tl)
-                case Attempt.Failure(e) =>
+                case Attempt.Failure(e)                                                                             =>
                   if (failOnErr) Pull.raiseError(CodecError(e))
                   else Pull.pure(Some(tl.cons1(buffer)))
               }
-            case None => if (carry.isEmpty) Pull.pure(None) else Pull.pure(Some(Stream(carry)))
+            case None           => if (carry.isEmpty) Pull.pure(None) else Pull.pure(Some(Stream(carry)))
           }
         loop(BitVector.empty, s)
 
       case Isolate(bits, decoder) =>
         def loop(
             carry: BitVector,
-            s: Stream[F, BitVector]
+            s:     Stream[F, BitVector]
         ): Pull[F, A, Option[Stream[F, BitVector]]] =
           s.pull.uncons1.flatMap {
             case Some((hd, tl)) =>
@@ -117,7 +116,7 @@ final class StreamDecoder[+A] private (private val step: StreamDecoder.Step[A]) 
               if (buffer.size == bits)
                 decoder[F](Stream(buffer)) >> Pull.pure(Some(tl.cons1(remainder)))
               else loop(buffer, tl)
-            case None => if (carry.isEmpty) Pull.pure(None) else Pull.pure(Some(Stream(carry)))
+            case None           => if (carry.isEmpty) Pull.pure(None) else Pull.pure(Some(Stream(carry)))
           }
         loop(BitVector.empty, s)
     }
@@ -129,26 +128,26 @@ final class StreamDecoder[+A] private (private val step: StreamDecoder.Step[A]) 
   def flatMap[B](f: A => StreamDecoder[B]): StreamDecoder[B] =
     new StreamDecoder[B](
       self.step match {
-        case Empty         => Empty
-        case Result(a)     => f(a).step
-        case Failed(cause) => Failed(cause)
+        case Empty                      => Empty
+        case Result(a)                  => f(a).step
+        case Failed(cause)              => Failed(cause)
         case Decode(g, once, failOnErr) =>
           Decode(in => g(in).map(_.map(_.flatMap(f))), once, failOnErr)
-        case Isolate(bits, decoder) => Isolate(bits, decoder.flatMap(f))
-        case Append(x, y)           => Append(x.flatMap(f), () => y().flatMap(f))
+        case Isolate(bits, decoder)     => Isolate(bits, decoder.flatMap(f))
+        case Append(x, y)               => Append(x.flatMap(f), () => y().flatMap(f))
       }
     )
 
   def handleErrorWith[A2 >: A](f: Throwable => StreamDecoder[A2]): StreamDecoder[A2] =
     new StreamDecoder[A2](
       self.step match {
-        case Empty         => Empty
-        case Result(a)     => Result(a)
-        case Failed(cause) => f(cause).step
+        case Empty                      => Empty
+        case Result(a)                  => Result(a)
+        case Failed(cause)              => f(cause).step
         case Decode(g, once, failOnErr) =>
           Decode(in => g(in).map(_.map(_.handleErrorWith(f))), once, failOnErr)
-        case Isolate(bits, decoder) => Isolate(bits, decoder.handleErrorWith(f))
-        case Append(x, y)           => Append(x.handleErrorWith(f), () => y().handleErrorWith(f))
+        case Isolate(bits, decoder)     => Isolate(bits, decoder.handleErrorWith(f))
+        case Append(x, y)               => Append(x.handleErrorWith(f), () => y().handleErrorWith(f))
       }
     )
 
@@ -208,8 +207,8 @@ object StreamDecoder {
   private case class Result[A](value: A) extends Step[A]
   private case class Failed(cause: Throwable) extends Step[Nothing]
   private case class Decode[A](
-      f: BitVector => Attempt[DecodeResult[StreamDecoder[A]]],
-      once: Boolean,
+      f:         BitVector => Attempt[DecodeResult[StreamDecoder[A]]],
+      once:      Boolean,
       failOnErr: Boolean
   ) extends Step[A]
   private case class Isolate[A](bits: Long, decoder: StreamDecoder[A]) extends Step[A]
@@ -276,7 +275,7 @@ object StreamDecoder {
     once(codecs.ignore(bits)).flatMap(_ => empty)
 
   implicit val instance: MonadThrow[StreamDecoder] = new MonadThrow[StreamDecoder] {
-    def pure[A](a: A) = StreamDecoder.emit(a)
+    def pure[A](a:        A) = StreamDecoder.emit(a)
     def flatMap[A, B](da: StreamDecoder[A])(f: A => StreamDecoder[B]) = da.flatMap(f)
     def tailRecM[A, B](a: A)(f: A => StreamDecoder[Either[A, B]]): StreamDecoder[B] =
       f(a).flatMap {
@@ -284,10 +283,10 @@ object StreamDecoder {
         case Right(b) => pure(b)
       }
     def handleErrorWith[A](da: StreamDecoder[A])(
-        f: Throwable => StreamDecoder[A]
+        f:                     Throwable => StreamDecoder[A]
     ): StreamDecoder[A] =
       da.handleErrorWith(f)
-    def raiseError[A](e: Throwable): StreamDecoder[A] =
+    def raiseError[A](e: Throwable):                               StreamDecoder[A] =
       StreamDecoder.raiseError(e)
   }
 }

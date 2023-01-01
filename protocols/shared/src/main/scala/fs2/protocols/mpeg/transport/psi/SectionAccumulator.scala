@@ -27,7 +27,7 @@ package psi
 
 /** Accumulates sections of the same table id and table id extension. */
 private[psi] class SectionAccumulator[A <: ExtendedSection] private (
-    val sections: GroupedSections[A],
+    val sections:    GroupedSections[A],
     sectionByNumber: Map[Int, A]
 ) {
 
@@ -45,8 +45,8 @@ private[psi] class SectionAccumulator[A <: ExtendedSection] private (
       _ <- checkEquality("versions")(_.extension.version)
       _ <- checkEquality("last section numbers")(_.extension.lastSectionNumber)
       _ <- validate("invalid section number")(
-        sectionNumber <= sections.head.extension.lastSectionNumber
-      )
+             sectionNumber <= sections.head.extension.lastSectionNumber
+           )
       _ <- validate("duplicate section number")(!sectionByNumber.contains(sectionNumber))
     } yield new SectionAccumulator(
       GroupedSections(section, sections.list),

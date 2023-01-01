@@ -43,11 +43,11 @@ private[fs2] trait ioplatform {
 
   @deprecated("Use suspendReadableAndRead instead", "3.1.4")
   def readReadable[F[_]](
-      readable: F[Readable],
+      readable:          F[Readable],
       destroyIfNotEnded: Boolean = true,
       destroyIfCanceled: Boolean = true
   )(implicit
-      F: Async[F]
+      F:                 Async[F]
   ): Stream[F, Byte] = Stream
     .eval(readable)
     .flatMap(r => Stream.resource(suspendReadableAndRead(destroyIfNotEnded, destroyIfCanceled)(r)))
@@ -58,43 +58,43 @@ private[fs2] trait ioplatform {
   def suspendReadableAndRead[F[_], R <: Readable](
       destroyIfNotEnded: Boolean = true,
       destroyIfCanceled: Boolean = true
-  )(thunk: => R)(implicit F: Async[F]): Resource[F, (R, Stream[F, Byte])] =
+  )(thunk:               => R)(implicit F: Async[F]): Resource[F, (R, Stream[F, Byte])] =
     (for {
-      dispatcher <- Dispatcher.sequential[F]
-      channel <- Channel.unbounded[F, Unit].toResource
-      error <- F.deferred[Throwable].toResource
+      dispatcher      <- Dispatcher.sequential[F]
+      channel         <- Channel.unbounded[F, Unit].toResource
+      error           <- F.deferred[Throwable].toResource
       readableResource = for {
-        readable <- Resource.makeCase(F.delay(thunk)) {
-          case (readable, Resource.ExitCase.Succeeded) =>
-            F.delay {
-              if (!readable.readableEnded & destroyIfNotEnded)
-                readable.destroy()
-            }
-          case (readable, Resource.ExitCase.Errored(_)) =>
-            // tempting, but don't propagate the error!
-            // that would trigger a unhandled Node.js error that circumvents FS2/CE error channels
-            F.delay(readable.destroy())
-          case (readable, Resource.ExitCase.Canceled) =>
-            if (destroyIfCanceled)
-              F.delay(readable.destroy())
-            else
-              F.unit
-        }
-        _ <- readable.registerListener[F, Any]("readable", dispatcher)(_ => channel.send(()).void)
-        _ <- readable.registerListener[F, Any]("end", dispatcher)(_ => channel.close.void)
-        _ <- readable.registerListener[F, Any]("close", dispatcher)(_ => channel.close.void)
-        _ <- readable.registerListener[F, js.Error]("error", dispatcher) { e =>
-          error.complete(js.JavaScriptException(e)).void
-        }
-      } yield readable
+                           readable <- Resource.makeCase(F.delay(thunk)) {
+                                         case (readable, Resource.ExitCase.Succeeded)  =>
+                                           F.delay {
+                                             if (!readable.readableEnded & destroyIfNotEnded)
+                                               readable.destroy()
+                                           }
+                                         case (readable, Resource.ExitCase.Errored(_)) =>
+                                           // tempting, but don't propagate the error!
+                                           // that would trigger a unhandled Node.js error that circumvents FS2/CE error channels
+                                           F.delay(readable.destroy())
+                                         case (readable, Resource.ExitCase.Canceled)   =>
+                                           if (destroyIfCanceled)
+                                             F.delay(readable.destroy())
+                                           else
+                                             F.unit
+                                       }
+                           _        <- readable.registerListener[F, Any]("readable", dispatcher)(_ => channel.send(()).void)
+                           _        <- readable.registerListener[F, Any]("end", dispatcher)(_ => channel.close.void)
+                           _        <- readable.registerListener[F, Any]("close", dispatcher)(_ => channel.close.void)
+                           _        <- readable.registerListener[F, js.Error]("error", dispatcher) { e =>
+                                         error.complete(js.JavaScriptException(e)).void
+                                       }
+                         } yield readable
       // Implementation note: why run on the MicrotaskExecutor?
       // In many cases creating a `Readable` starts async side-effects (e.g. negotiating TLS handshake or opening a file handle).
       // Furthermore, these side-effects will invoke the listeners we register to the `Readable`.
       // Therefore, it is critical that the listeners are registered to the `Readable` _before_ these async side-effects occur:
       // in other words, before we next yield (cede) to the event loop. Because an arbitrary effect `F` (particularly `IO`) may cede at any time,
       // our only recourse is to run the entire creation/listener registration process on the microtask executor.
-      readable <- readableResource.evalOn(MicrotaskExecutor)
-      stream =
+      readable        <- readableResource.evalOn(MicrotaskExecutor)
+      stream           =
         (channel.stream
           .concurrently(Stream.eval(error.get.flatMap(F.raiseError[Unit]))) >>
           Stream
@@ -119,9 +119,7 @@ private[fs2] trait ioplatform {
             .merge(out.drain)
             .concurrently(
               Stream.eval(
-                F.async_[Unit](cb =>
-                  duplex.end(e => cb(e.toLeft(()).leftMap(js.JavaScriptException)))
-                )
+                F.async_[Unit](cb => duplex.end(e => cb(e.toLeft(()).leftMap(js.JavaScriptException))))
               )
             )
         }
@@ -135,9 +133,9 @@ private[fs2] trait ioplatform {
   /** Writes all bytes to the specified `Writable`.
     */
   def writeWritable[F[_]](
-      writable: F[Writable],
+      writable:    F[Writable],
       endAfterUse: Boolean = true
-  )(implicit F: Async[F]): Pipe[F, Byte, Nothing] =
+  )(implicit F:    Async[F]): Pipe[F, Byte, Nothing] =
     in =>
       Stream
         .eval(writable)
@@ -155,7 +153,7 @@ private[fs2] trait ioplatform {
                   ()
                 }
               } >> go(tail)
-            case None => Pull.done
+            case None               => Pull.done
           }
 
           val end =
@@ -168,7 +166,7 @@ private[fs2] trait ioplatform {
             else Stream.empty
 
           (go(in).stream ++ end).onFinalizeCase[F] {
-            case Resource.ExitCase.Succeeded =>
+            case Resource.ExitCase.Succeeded                               =>
               F.unit
             case Resource.ExitCase.Errored(_) | Resource.ExitCase.Canceled =>
               // tempting, but don't propagate the error!
@@ -196,63 +194,63 @@ private[fs2] trait ioplatform {
       }
 
   private[io] def mkDuplex[F[_]](
-      in: Stream[F, Byte]
+      in:       Stream[F, Byte]
   )(implicit F: Async[F]): Resource[F, (Duplex, Stream[F, Byte])] =
     for {
-      readDispatcher <- Dispatcher.sequential[F]
+      readDispatcher  <- Dispatcher.sequential[F]
       writeDispatcher <- Dispatcher.sequential[F]
       errorDispatcher <- Dispatcher.sequential[F]
-      readQueue <- Queue.bounded[F, Option[Chunk[Byte]]](1).toResource
-      writeChannel <- Channel.synchronous[F, Chunk[Byte]].toResource
-      error <- F.deferred[Throwable].toResource
-      duplex <- Resource.make {
-        F.delay {
-          new facade.stream.Duplex(
-            new facade.stream.DuplexOptions {
+      readQueue       <- Queue.bounded[F, Option[Chunk[Byte]]](1).toResource
+      writeChannel    <- Channel.synchronous[F, Chunk[Byte]].toResource
+      error           <- F.deferred[Throwable].toResource
+      duplex          <- Resource.make {
+                           F.delay {
+                             new facade.stream.Duplex(
+                               new facade.stream.DuplexOptions {
 
-              var autoDestroy = false
+                                 var autoDestroy = false
 
-              var read = { readable =>
-                readDispatcher.unsafeRunAndForget(
-                  readQueue.take.flatMap { chunk =>
-                    F.delay(readable.push(chunk.map(_.toUint8Array).orNull)).void
-                  }
-                )
-              }
+                                 var read = { readable =>
+                                   readDispatcher.unsafeRunAndForget(
+                                     readQueue.take.flatMap { chunk =>
+                                       F.delay(readable.push(chunk.map(_.toUint8Array).orNull)).void
+                                     }
+                                   )
+                                 }
 
-              var write = { (_, chunk, _, cb) =>
-                writeDispatcher.unsafeRunAndForget(
-                  writeChannel.send(Chunk.uint8Array(chunk)) *> F.delay(cb(null))
-                )
-              }
+                                 var write = { (_, chunk, _, cb) =>
+                                   writeDispatcher.unsafeRunAndForget(
+                                     writeChannel.send(Chunk.uint8Array(chunk)) *> F.delay(cb(null))
+                                   )
+                                 }
 
-              var `final` = { (_, cb) =>
-                writeDispatcher.unsafeRunAndForget(
-                  writeChannel.close *> F.delay(cb(null))
-                )
-              }
+                                 var `final` = { (_, cb) =>
+                                   writeDispatcher.unsafeRunAndForget(
+                                     writeChannel.close *> F.delay(cb(null))
+                                   )
+                                 }
 
-              var destroy = { (_, err, cb) =>
-                errorDispatcher.unsafeRunAndForget {
-                  error
-                    .complete(
-                      Option(err)
-                        .fold[Exception](new StreamDestroyedException)(js.JavaScriptException(_))
-                    ) *> F.delay(cb(null))
-                }
-              }
-            }
-          )
-        }
-      } { duplex =>
-        F.delay {
-          if (!duplex.readableEnded | !duplex.writableEnded)
-            duplex.destroy()
-        }
-      }
-      drainIn = in.enqueueNoneTerminatedChunks(readQueue).drain
-      out = writeChannel.stream.unchunks
-        .concurrently(Stream.eval(error.get.flatMap(F.raiseError[Unit])))
+                                 var destroy = { (_, err, cb) =>
+                                   errorDispatcher.unsafeRunAndForget {
+                                     error
+                                       .complete(
+                                         Option(err)
+                                           .fold[Exception](new StreamDestroyedException)(js.JavaScriptException(_))
+                                       ) *> F.delay(cb(null))
+                                   }
+                                 }
+                               }
+                             )
+                           }
+                         } { duplex =>
+                           F.delay {
+                             if (!duplex.readableEnded | !duplex.writableEnded)
+                               duplex.destroy()
+                           }
+                         }
+      drainIn          = in.enqueueNoneTerminatedChunks(readQueue).drain
+      out              = writeChannel.stream.unchunks
+                           .concurrently(Stream.eval(error.get.flatMap(F.raiseError[Unit])))
     } yield (
       duplex,
       drainIn.merge(out).adaptError { case IOException(ex) => ex }

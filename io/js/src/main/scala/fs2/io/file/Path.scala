@@ -38,10 +38,10 @@ final case class Path private (override val toString: String) extends PathApi {
   def /(path: Path): Path = this / path.toString
 
   def resolve(name: String): Path = resolve(Path(name))
-  def resolve(path: Path): Path = if (path.isAbsolute) path else this / path
+  def resolve(path: Path):   Path = if (path.isAbsolute) path else this / path
 
   def resolveSibling(name: String): Path = resolveSibling(Path(name))
-  def resolveSibling(path: Path): Path = parent.fold(path)(_.resolve(path))
+  def resolveSibling(path: Path):   Path = parent.fold(path)(_.resolve(path))
 
   def relativize(path: Path): Path = Path(facade.path.relative(toString, path.toString))
 
@@ -89,7 +89,7 @@ final case class Path private (override val toString: String) extends PathApi {
 
   override def equals(that: Any) = that match {
     case p: Path => toString == p.toString
-    case _       => false
+    case _ => false
   }
 
   override def hashCode = toString.hashCode

@@ -37,7 +37,7 @@ import fs2.io.internal.facade
 private[net] trait SocketCompanionPlatform {
 
   private[net] def forAsync[F[_]](
-      sock: facade.net.Socket
+      sock:     facade.net.Socket
   )(implicit F: Async[F]): Resource[F, Socket[F]] =
     suspendReadableAndRead(
       destroyIfNotEnded = false,
@@ -54,9 +54,9 @@ private[net] trait SocketCompanionPlatform {
       }
 
   private[net] class AsyncSocket[F[_]](
-      sock: facade.net.Socket,
+      sock:       facade.net.Socket,
       readStream: SuspendedStream[F, Byte]
-  )(implicit F: Async[F])
+  )(implicit F:   Async[F])
       extends Socket[F] {
 
     private def read(
@@ -89,13 +89,13 @@ private[net] trait SocketCompanionPlatform {
 
     override def remoteAddress: F[SocketAddress[IpAddress]] =
       for {
-        ip <- F.delay(sock.remoteAddress.toOption.flatMap(IpAddress.fromString).get)
+        ip   <- F.delay(sock.remoteAddress.toOption.flatMap(IpAddress.fromString).get)
         port <- F.delay(sock.remotePort.toOption.map(_.toInt).flatMap(Port.fromInt).get)
       } yield SocketAddress(ip, port)
 
     override def localAddress: F[SocketAddress[IpAddress]] =
       for {
-        ip <- F.delay(sock.localAddress.toOption.flatMap(IpAddress.fromString).get)
+        ip   <- F.delay(sock.localAddress.toOption.flatMap(IpAddress.fromString).get)
         port <- F.delay(sock.localPort.toOption.map(_.toInt).flatMap(Port.fromInt).get)
       } yield SocketAddress(ip, port)
 

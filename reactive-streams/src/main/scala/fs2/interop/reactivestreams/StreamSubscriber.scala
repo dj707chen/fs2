@@ -40,12 +40,12 @@ import java.util.concurrent.atomic.AtomicReference
 final class StreamSubscriber[F[_], A](
     val sub: StreamSubscriber.FSM[F, A]
 )(implicit
-    F: ApplicativeError[F, Throwable]
+    F:       ApplicativeError[F, Throwable]
 ) extends Subscriber[A] {
 
   @deprecated("Use a constructor without dispatcher instead", "3.1.4")
   def this(sub: StreamSubscriber.FSM[F, A], dispatcher: Dispatcher[F])(implicit
-      F: ApplicativeError[F, Throwable]
+      F:        ApplicativeError[F, Throwable]
   ) = this(sub)
 
   /** Called by an upstream reactivestreams system */
@@ -123,7 +123,7 @@ object StreamSubscriber {
 
   private[reactivestreams] def fsm[F[_], A](
       bufferSize: Int
-  )(implicit F: Async[F]): F[FSM[F, A]] = {
+  )(implicit F:   Async[F]): F[FSM[F, A]] = {
     type Out = Either[Throwable, Option[Chunk[A]]]
 
     sealed trait Input
@@ -138,8 +138,7 @@ object StreamSubscriber {
     case object Uninitialized extends State
     case class Idle(sub: Subscription, buffer: Chunk[A]) extends State
     case class RequestBeforeSubscription(req: Out => Unit) extends State
-    case class WaitingOnUpstream(sub: Subscription, buffer: Chunk[A], elementRequest: Out => Unit)
-        extends State
+    case class WaitingOnUpstream(sub: Subscription, buffer: Chunk[A], elementRequest: Out => Unit) extends State
     case object UpstreamCompletion extends State
     case object DownstreamCancellation extends State
     case class UpstreamError(err: Throwable) extends State
@@ -155,54 +154,54 @@ object StreamSubscriber {
         case OnSubscribe(s) => {
           case RequestBeforeSubscription(req) =>
             WaitingOnUpstream(s, Chunk.empty, req) -> (() => s.request(bufferSize.toLong))
-          case Uninitialized => Idle(s, Chunk.empty) -> (() => ())
-          case o =>
+          case Uninitialized                  => Idle(s, Chunk.empty) -> (() => ())
+          case o                              =>
             val err = new Error(s"received subscription in invalid state [$o]")
             o -> { () =>
               s.cancel()
               reportFailure(err)
             }
         }
-        case OnNext(a) => {
+        case OnNext(a)      => {
           case WaitingOnUpstream(s, buffer, r) =>
             val newBuffer = buffer ++ Chunk(a)
-            if (newBuffer.size == bufferSize) {
+            if (newBuffer.size                   == bufferSize) {
               Idle(s, Chunk.empty) -> (() => r(newBuffer.some.asRight))
             } else
               WaitingOnUpstream(s, newBuffer, r) -> (() => ())
-          case DownstreamCancellation => DownstreamCancellation -> (() => ())
-          case o =>
+          case DownstreamCancellation          => DownstreamCancellation -> (() => ())
+          case o                               =>
             o -> (() => reportFailure(new Error(s"received record [$a] in invalid state [$o]")))
         }
-        case OnComplete => {
+        case OnComplete     => {
           case WaitingOnUpstream(_, buffer, r) =>
             if (buffer.nonEmpty) {
               UpstreamCompletion -> (() => r(buffer.some.asRight))
             } else {
               UpstreamCompletion -> (() => r(None.asRight))
             }
-          case _ => UpstreamCompletion -> (() => ())
+          case _                               => UpstreamCompletion -> (() => ())
         }
-        case OnError(e) => {
+        case OnError(e)     => {
           case WaitingOnUpstream(_, _, r) => UpstreamError(e) -> (() => r(e.asLeft))
           case _                          => UpstreamError(e) -> (() => ())
         }
-        case OnFinalize => {
+        case OnFinalize     => {
           case WaitingOnUpstream(sub, _, r) =>
             DownstreamCancellation -> { () =>
               sub.cancel()
               r(None.asRight)
             }
-          case Idle(sub, _) => DownstreamCancellation -> (() => sub.cancel())
-          case o            => o -> (() => ())
+          case Idle(sub, _)                 => DownstreamCancellation -> (() => sub.cancel())
+          case o                            => o                      -> (() => ())
         }
-        case OnDequeue(r) => {
-          case Uninitialized => RequestBeforeSubscription(r) -> (() => ())
-          case Idle(sub, buffer) =>
+        case OnDequeue(r)   => {
+          case Uninitialized          => RequestBeforeSubscription(r) -> (() => ())
+          case Idle(sub, buffer)      =>
             WaitingOnUpstream(sub, buffer, r) -> (() => sub.request(bufferSize.toLong))
-          case err @ UpstreamError(e) => err -> (() => r(e.asLeft))
-          case UpstreamCompletion     => UpstreamCompletion -> (() => r(None.asRight))
-          case o => o -> (() => r(new Error(s"received request in invalid state [$o]").asLeft))
+          case err @ UpstreamError(e) => err                          -> (() => r(e.asLeft))
+          case UpstreamCompletion     => UpstreamCompletion           -> (() => r(None.asRight))
+          case o                      => o                            -> (() => r(new Error(s"received request in invalid state [$o]").asLeft))
         }
       }
 
@@ -215,11 +214,11 @@ object StreamSubscriber {
           effect()
         }
         def onSubscribe(s: Subscription): Unit = nextState(OnSubscribe(s))
-        def onNext(a: A): Unit = nextState(OnNext(a))
+        def onNext(a:  A):         Unit = nextState(OnNext(a))
         def onError(t: Throwable): Unit = nextState(OnError(t))
-        def onComplete(): Unit = nextState(OnComplete)
-        def onFinalize: F[Unit] = F.delay(nextState(OnFinalize))
-        def dequeue1: F[Either[Throwable, Option[Chunk[A]]]] =
+        def onComplete(): Unit                                   = nextState(OnComplete)
+        def onFinalize:   F[Unit]                                = F.delay(nextState(OnFinalize))
+        def dequeue1:     F[Either[Throwable, Option[Chunk[A]]]] =
           F.async_[Either[Throwable, Option[Chunk[A]]]] { cb =>
             nextState(OnDequeue(out => cb(Right(out))))
           }

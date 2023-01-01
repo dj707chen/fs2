@@ -41,93 +41,92 @@ private[net] trait SocketGroupCompanionPlatform { self: SocketGroup.type =>
 
   private[net] def forAsync[F[_]: Async]: SocketGroup[F] = new AsyncSocketGroup[F]
 
-  private[net] final class AsyncSocketGroup[F[_]](implicit F: Async[F])
-      extends AbstractAsyncSocketGroup[F] {
+  private[net] final class AsyncSocketGroup[F[_]](implicit F: Async[F]) extends AbstractAsyncSocketGroup[F] {
 
     private def setSocketOptions(options: List[SocketOption])(socket: facade.net.Socket): F[Unit] =
       options.traverse_(option => option.key.set(socket, option.value))
 
     override def client(
-        to: SocketAddress[Host],
+        to:      SocketAddress[Host],
         options: List[SocketOption]
     ): Resource[F, Socket[F]] =
       (for {
-        sock <- Resource
-          .make(
-            F.delay(
-              new facade.net.Socket(new facade.net.SocketOptions { allowHalfOpen = true })
-            )
-          )(sock =>
-            F.delay {
-              if (!sock.destroyed)
-                sock.destroy()
-            }
-          )
-          .evalTap(setSocketOptions(options))
+        sock   <- Resource
+                    .make(
+                      F.delay(
+                        new facade.net.Socket(new facade.net.SocketOptions { allowHalfOpen = true })
+                      )
+                    )(sock =>
+                      F.delay {
+                        if (!sock.destroyed)
+                          sock.destroy()
+                      }
+                    )
+                    .evalTap(setSocketOptions(options))
         socket <- Socket.forAsync(sock)
-        _ <- F
-          .async[Unit] { cb =>
-            sock
-              .registerOneTimeListener[F, js.Error]("error") { error =>
-                cb(Left(js.JavaScriptException(error)))
-              } <* F.delay {
-              sock.connect(to.port.value, to.host.toString, () => cb(Right(())))
-            }
-          }
-          .toResource
+        _      <- F
+                    .async[Unit] { cb =>
+                      sock
+                        .registerOneTimeListener[F, js.Error]("error") { error =>
+                          cb(Left(js.JavaScriptException(error)))
+                        } <* F.delay {
+                        sock.connect(to.port.value, to.host.toString, () => cb(Right(())))
+                      }
+                    }
+                    .toResource
       } yield socket).adaptError { case IOException(ex) => ex }
 
     override def serverResource(
         address: Option[Host],
-        port: Option[Port],
+        port:    Option[Port],
         options: List[SocketOption]
     ): Resource[F, (SocketAddress[IpAddress], Stream[F, Socket[F]])] =
       (for {
         dispatcher <- Dispatcher.sequential[F]
-        channel <- Channel.unbounded[F, facade.net.Socket].toResource
-        server <- Resource.make(
-          F
-            .delay(
-              facade.net.createServer(
-                new facade.net.ServerOptions {
-                  pauseOnConnect = true
-                  allowHalfOpen = true
-                },
-                sock => dispatcher.unsafeRunAndForget(channel.send(sock))
-              )
-            )
-        )(server =>
-          F.async[Unit] { cb =>
-            if (server.listening)
-              F.delay(server.close(e => cb(e.toLeft(()).leftMap(js.JavaScriptException)))) *>
-                channel.close.as(None)
-            else
-              F.delay(cb(Right(()))).as(None)
-          }
-        )
-        _ <- F
-          .async[Unit] { cb =>
-            server.registerOneTimeListener[F, js.Error]("error") { e =>
-              cb(Left(js.JavaScriptException(e)))
-            } <* F.delay {
-              address match {
-                case Some(host) =>
-                  server.listen(port.fold(0)(_.value), host.toString, () => cb(Right(())))
-                case None =>
-                  server.listen(port.fold(0)(_.value), () => cb(Right(())))
-              }
+        channel    <- Channel.unbounded[F, facade.net.Socket].toResource
+        server     <- Resource.make(
+                        F
+                          .delay(
+                            facade.net.createServer(
+                              new facade.net.ServerOptions {
+                                pauseOnConnect = true
+                                allowHalfOpen = true
+                              },
+                              sock => dispatcher.unsafeRunAndForget(channel.send(sock))
+                            )
+                          )
+                      )(server =>
+                        F.async[Unit] { cb =>
+                          if (server.listening)
+                            F.delay(server.close(e => cb(e.toLeft(()).leftMap(js.JavaScriptException)))) *>
+                              channel.close.as(None)
+                          else
+                            F.delay(cb(Right(()))).as(None)
+                        }
+                      )
+        _          <- F
+                        .async[Unit] { cb =>
+                          server.registerOneTimeListener[F, js.Error]("error") { e =>
+                            cb(Left(js.JavaScriptException(e)))
+                          } <* F.delay {
+                            address match {
+                              case Some(host) =>
+                                server.listen(port.fold(0)(_.value), host.toString, () => cb(Right(())))
+                              case None       =>
+                                server.listen(port.fold(0)(_.value), () => cb(Right(())))
+                            }
 
-            }
+                          }
 
-          }
-          .toResource
-        ipAddress <- F.delay {
-          val info = server.address()
-          SocketAddress(IpAddress.fromString(info.address).get, Port.fromInt(info.port).get)
-        }.toResource
-        sockets = channel.stream
-          .evalTap(setSocketOptions(options))
-          .flatMap(sock => Stream.resource(Socket.forAsync(sock)))
+                        }
+                        .toResource
+        ipAddress  <- F.delay {
+                        val info = server.address()
+                        SocketAddress(IpAddress.fromString(info.address).get, Port.fromInt(info.port).get)
+                      }.toResource
+        sockets     = channel.stream
+                        .evalTap(setSocketOptions(options))
+                        .flatMap(sock => Stream.resource(Socket.forAsync(sock)))
       } yield (ipAddress, sockets)).adaptError { case IOException(ex) => ex }
 
   }

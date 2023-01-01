@@ -57,7 +57,7 @@ final class PosixPermissions private (val value: Int) extends Permissions {
 
   override def equals(that: Any): Boolean = that match {
     case other: PosixPermissions => value == other.value
-    case _                       => false
+    case _ => false
   }
 
   override def hashCode: Int = value.hashCode
@@ -114,7 +114,7 @@ object PosixPermissions {
         if (s(7) == 'w') value = value | OthersWrite.value
         if (s(8) == 'x') value = value | OthersExecute.value
         Some(new PosixPermissions(value))
-      case _ => None
+      case _         => None
     }
 }
 

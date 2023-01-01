@@ -41,11 +41,11 @@ object ByteOrderMagic extends Codec[ByteOrdering] {
 
   def decode(buf: BitVector) =
     bytes(4).decode(buf).flatMap {
-      case DecodeResult(BigEndian, rest) =>
+      case DecodeResult(BigEndian, rest)    =>
         Attempt.successful(DecodeResult(ByteOrdering.BigEndian, rest))
       case DecodeResult(LittleEndian, rest) =>
         Attempt.successful(DecodeResult(ByteOrdering.LittleEndian, rest))
-      case DecodeResult(other, _) =>
+      case DecodeResult(other, _)           =>
         Attempt.failure(
           Err(s"unable to detect byte ordering due to unrecognized magic number $other")
         )

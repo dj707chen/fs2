@@ -47,7 +47,7 @@ private[fs2] trait CollectorPlatform { self: Collector.type =>
     make(implicitly[ClassTag[A]] match {
       case ClassTag.Byte =>
         Builder.byteArray.mapResult(ArraySeq.unsafeWrapArray).asInstanceOf[Builder[A, ArraySeq[A]]]
-      case _ => Builder.taggedArraySeq[A]
+      case _             => Builder.taggedArraySeq[A]
     })
   }
 

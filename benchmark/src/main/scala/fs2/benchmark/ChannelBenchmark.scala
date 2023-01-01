@@ -34,7 +34,7 @@ class ChannelBenchmark {
   @Param(Array("64", "1024", "16384"))
   var size: Int = _
 
-  var list: List[Unit] = _
+  var list:  List[Unit]       = _
   var lists: List[List[Unit]] = _
 
   @Setup
@@ -80,7 +80,7 @@ class ChannelBenchmark {
 
   private def blackHole(s: Stream[IO, Unit]) =
     s.repeatPull(_.uncons.flatMap {
-      case None => Pull.pure(None)
+      case None           => Pull.pure(None)
       case Some((hd, tl)) =>
         val action = IO.delay(0.until(hd.size).foreach(_ => Blackhole.consumeCPU(100)))
         Pull.eval(action).as(Some(tl))

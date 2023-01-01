@@ -37,33 +37,33 @@ private[net] trait NetworkCompanionPlatform { self: Network.type =>
   implicit def forAsync[F[_]](implicit F: Async[F]): Network[F] =
     new UnsealedNetwork[F] {
 
-      private lazy val socketGroup = SocketGroup.forAsync[F]
+      private lazy val socketGroup         = SocketGroup.forAsync[F]
       private lazy val datagramSocketGroup = DatagramSocketGroup.forAsync[F]
 
       override def client(
-          to: SocketAddress[Host],
+          to:      SocketAddress[Host],
           options: List[SocketOption]
       ): Resource[F, Socket[F]] =
         socketGroup.client(to, options)
 
       override def server(
           address: Option[Host],
-          port: Option[Port],
+          port:    Option[Port],
           options: List[SocketOption]
       ): Stream[F, Socket[F]] =
         socketGroup.server(address, port, options)
 
       override def serverResource(
           address: Option[Host],
-          port: Option[Port],
+          port:    Option[Port],
           options: List[SocketOption]
       ): Resource[F, (SocketAddress[IpAddress], Stream[F, Socket[F]])] =
         socketGroup.serverResource(address, port, options)
 
       override def openDatagramSocket(
-          address: Option[Host],
-          port: Option[Port],
-          options: List[DatagramSocketOption],
+          address:        Option[Host],
+          port:           Option[Port],
+          options:        List[DatagramSocketOption],
           protocolFamily: Option[DatagramSocketGroup.ProtocolFamily]
       ): Resource[F, DatagramSocket[F]] =
         datagramSocketGroup.openDatagramSocket(address, port, options, protocolFamily)

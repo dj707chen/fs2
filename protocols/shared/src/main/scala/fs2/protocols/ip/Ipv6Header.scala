@@ -33,12 +33,12 @@ import com.comcast.ip4s.Ipv6Address
 
 /** Simplified model of an IPv6 header -- extension headers are not directly supported. */
 case class Ipv6Header(
-    trafficClass: Int,
-    flowLabel: Int,
+    trafficClass:  Int,
+    flowLabel:     Int,
     payloadLength: Int,
-    protocol: Int,
-    hopLimit: Int,
-    sourceIp: Ipv6Address,
+    protocol:      Int,
+    hopLimit:      Int,
+    sourceIp:      Ipv6Address,
     destinationIp: Ipv6Address
 ) extends UnsealedIpHeader
 

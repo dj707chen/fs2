@@ -26,8 +26,8 @@ import scodec.bits.{ByteOrdering, ByteVector}
 package object pcapng {
 
   def orderDependent[T](
-      big: ByteVector,
-      little: ByteVector
+      big:        ByteVector,
+      little:     ByteVector
   )(implicit ord: ByteOrdering): ByteVector =
     ord match {
       case ByteOrdering.BigEndian    => big

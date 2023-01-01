@@ -55,12 +55,12 @@ private[compression] trait CompressionPlatform[F[_]] {
     * @param comment          optional file comment
     */
   def gzip(
-      bufferSize: Int = 1024 * 32,
-      deflateLevel: Option[Int] = None,
-      deflateStrategy: Option[Int] = None,
+      bufferSize:       Int = 1024 * 32,
+      deflateLevel:     Option[Int] = None,
+      deflateStrategy:  Option[Int] = None,
       modificationTime: Option[Nothing] = None,
-      fileName: Option[Nothing] = None,
-      comment: Option[Nothing] = None
+      fileName:         Option[Nothing] = None,
+      comment:          Option[Nothing] = None
   ): Pipe[F, Byte, Byte] =
     gzip(
       fileName = fileName,
@@ -101,10 +101,10 @@ private[compression] trait CompressionPlatform[F[_]] {
     * @param deflateParams    see [[compression.DeflateParams]]
     */
   def gzip(
-      fileName: Option[Nothing],
+      fileName:         Option[Nothing],
       modificationTime: Option[Nothing],
-      comment: Option[Nothing],
-      deflateParams: DeflateParams
+      comment:          Option[Nothing],
+      deflateParams:    DeflateParams
   ): Pipe[F, Byte, Byte]
 
 }

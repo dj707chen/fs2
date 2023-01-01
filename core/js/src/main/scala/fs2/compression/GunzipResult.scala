@@ -37,8 +37,8 @@ package compression
   * @param comment File comment.
   */
 case class GunzipResult[F[_]](
-    content: Stream[F, Byte],
+    content:          Stream[F, Byte],
     modificationTime: Option[Nothing] = None,
-    fileName: Option[Nothing] = None,
-    comment: Option[Nothing] = None
+    fileName:         Option[Nothing] = None,
+    comment:          Option[Nothing] = None
 )

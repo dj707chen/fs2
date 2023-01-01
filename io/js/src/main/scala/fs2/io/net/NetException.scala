@@ -33,11 +33,9 @@ import scala.scalajs.js
 import scala.util.control.NoStackTrace
 import scala.util.matching.Regex
 
-class ProtocolException(message: String = null, cause: Throwable = null)
-    extends IOException(message, cause)
+class ProtocolException(message: String = null, cause: Throwable = null) extends IOException(message, cause)
 
-class SocketException(message: String = null, cause: Throwable = null)
-    extends IOException(message, cause)
+class SocketException(message: String = null, cause: Throwable = null) extends IOException(message, cause)
 private class JavaScriptSocketException(message: String, cause: js.JavaScriptException)
     extends SocketException(message, cause)
     with NoStackTrace
@@ -50,8 +48,7 @@ object SocketException {
     }
 }
 
-class BindException(message: String = null, cause: Throwable = null)
-    extends SocketException(message, cause)
+class BindException(message: String = null, cause: Throwable = null) extends SocketException(message, cause)
 private class JavaScriptBindException(cause: js.JavaScriptException)
     extends BindException("Address already in use", cause)
     with NoStackTrace
@@ -64,8 +61,7 @@ object BindException {
     }
 }
 
-class ConnectException(message: String = null, cause: Throwable = null)
-    extends SocketException(message, cause)
+class ConnectException(message: String = null, cause: Throwable = null) extends SocketException(message, cause)
 private class JavaScriptConnectException(cause: js.JavaScriptException)
     extends ConnectException("Connection refused", cause)
     with NoStackTrace
@@ -78,8 +74,7 @@ object ConnectException {
     }
 }
 
-class SocketTimeoutException(message: String = null, cause: Throwable = null)
-    extends InterruptedIOException(message, cause)
+class SocketTimeoutException(message: String = null, cause: Throwable = null) extends InterruptedIOException(message, cause)
 private class JavaScriptSocketTimeoutException(cause: js.JavaScriptException)
     extends SocketTimeoutException("Connection timed out", cause)
     with NoStackTrace
@@ -93,8 +88,7 @@ object SocketTimeoutException {
 }
 
 @deprecated("Use ip4s.UnknownHostException instead", "3.2.0")
-class UnknownHostException(message: String = null, cause: Throwable = null)
-    extends ip4s.UnknownHostException(message, cause)
+class UnknownHostException(message: String = null, cause: Throwable = null) extends ip4s.UnknownHostException(message, cause)
 @nowarn("cat=deprecation")
 private class JavaScriptUnknownHostException(host: String, cause: js.JavaScriptException)
     extends UnknownHostException(s"$host: ${UnknownHostException.message}", cause)

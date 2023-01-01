@@ -30,14 +30,14 @@ import java.nio.file.{Files => _, Path => JPath, _}
 private[file] trait WriteCursorCompanionPlatform {
   @deprecated("Use Files[F].writeCursorFromFileHandle", "3.0.0")
   def fromFileHandle[F[_]: Async](
-      file: FileHandle[F],
+      file:   FileHandle[F],
       append: Boolean
   ): F[WriteCursor[F]] =
     Files[F].writeCursorFromFileHandle(file, append)
 
   @deprecated("Use Files[F].writeCursor", "3.0.0")
   def fromPath[F[_]: Async](
-      path: JPath,
+      path:  JPath,
       flags: Seq[OpenOption] = List(StandardOpenOption.CREATE)
   ): Resource[F, WriteCursor[F]] =
     Files[F].writeCursor(path, flags)

@@ -36,7 +36,7 @@ private[fs2] trait ChunkPlatform[+O] { self: Chunk[O] =>
   def toArraySeqUntagged: ArraySeq[O] = {
     val buf = ArraySeq.untagged.newBuilder[O]
     buf.sizeHint(size)
-    var i = 0
+    var i   = 0
     while (i < size) {
       buf += apply(i)
       i += 1
@@ -50,7 +50,7 @@ private[fs2] trait ChunkCompanionPlatform { self: Chunk.type =>
   protected def platformIterable[O](i: Iterable[O]): Option[Chunk[O]] =
     i match {
       case a: immutable.ArraySeq[O] => Some(arraySeq(a))
-      case _                        => None
+      case _ => None
     }
 
   /** Creates a chunk backed by an immutable `ArraySeq`.

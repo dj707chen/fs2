@@ -37,13 +37,13 @@ import org.reactivestreams._
   * @see [[https://github.com/reactive-streams/reactive-streams-jvm#3-subscription-code]]
   */
 private[reactivestreams] final class StreamSubscription[F[_], A](
-    requests: Queue[F, StreamSubscription.Request],
-    cancelled: SignallingRef[F, Boolean],
-    sub: Subscriber[A],
-    stream: Stream[F, A],
-    startDispatcher: Dispatcher[F],
+    requests:          Queue[F, StreamSubscription.Request],
+    cancelled:         SignallingRef[F, Boolean],
+    sub:               Subscriber[A],
+    stream:            Stream[F, A],
+    startDispatcher:   Dispatcher[F],
     requestDispatcher: Dispatcher[F]
-)(implicit F: Async[F])
+)(implicit F:          Async[F])
     extends Subscription {
   import StreamSubscription._
 
@@ -56,7 +56,7 @@ private[reactivestreams] final class StreamSubscription[F[_], A](
       in => {
         def go(s: Stream[F, A]): Pull[F, A, Unit] =
           Pull.eval(requests.take).flatMap {
-            case Infinite => s.pull.echo
+            case Infinite  => s.pull.echo
             case Finite(n) =>
               s.pull.take(n).flatMap {
                 case None      => Pull.done
@@ -110,9 +110,9 @@ private[reactivestreams] object StreamSubscription {
   case class Finite(n: Long) extends Request
 
   def apply[F[_]: Async, A](
-      sub: Subscriber[A],
-      stream: Stream[F, A],
-      startDispatcher: Dispatcher[F],
+      sub:               Subscriber[A],
+      stream:            Stream[F, A],
+      startDispatcher:   Dispatcher[F],
       requestDispatcher: Dispatcher[F]
   ): F[StreamSubscription[F, A]] =
     SignallingRef(false).flatMap { cancelled =>

@@ -40,19 +40,19 @@ object CaptureFile {
       f: (LinkType, ByteVector) => Option[A]
   ): Pipe[F, Byte, TimeStamped[A]] = { bytes =>
     def go(
-        idbs: Vector[InterfaceDescriptionBlock],
+        idbs:   Vector[InterfaceDescriptionBlock],
         blocks: Stream[F, BodyBlock]
     ): Pull[F, TimeStamped[A], Unit] =
       blocks.pull.uncons1.flatMap {
         case Some((idb: InterfaceDescriptionBlock, tail)) =>
           go(idbs :+ idb, tail)
-        case Some((epb: EnhancedPacketBlock, tail)) =>
-          val idb = idbs(epb.interfaceId.toInt)
-          val ts = ((epb.timestampHigh << 32) | epb.timestampLow) * idb.if_tsresol
+        case Some((epb: EnhancedPacketBlock, tail))       =>
+          val idb         = idbs(epb.interfaceId.toInt)
+          val ts          = ((epb.timestampHigh << 32) | epb.timestampLow) * idb.if_tsresol
           val timeStamped = f(idb.linkType, epb.packetData).map(TimeStamped(ts, _))
           Pull.outputOption1(timeStamped) >> go(idbs, tail)
-        case Some((_, tail)) => go(idbs, tail)
-        case None            => Pull.done
+        case Some((_, tail))                              => go(idbs, tail)
+        case None                                         => Pull.done
       }
 
     val blocks = bytes.through(streamDecoder.toPipeByte)

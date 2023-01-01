@@ -55,10 +55,10 @@ private[io] trait compressionplatform {
         }
 
       def gzip(
-          fileName: Option[Nothing],
+          fileName:         Option[Nothing],
           modificationTime: Option[Nothing],
-          comment: Option[Nothing],
-          deflateParams: DeflateParams
+          comment:          Option[Nothing],
+          deflateParams:    DeflateParams
       ): Pipe[F, Byte, Byte] = deflateImpl(deflateParams) { options =>
         require(!deflateParams.fhCrcEnabled, "FHCRC is not supported on Node.js")
         deflateParams.header match {
@@ -86,7 +86,7 @@ private[io] trait compressionplatform {
 
       def deflateImpl(
           deflateParams: DeflateParams
-      )(f: facade.zlib.Options => facade.zlib.Zlib): Pipe[F, Byte, Byte] = in => {
+      )(f:               facade.zlib.Options => facade.zlib.Zlib): Pipe[F, Byte, Byte] = in => {
         val options = new facade.zlib.Options {
           chunkSize = deflateParams.bufferSizeOrMinimum
           level = deflateParams.level.juzDeflaterLevel
@@ -107,7 +107,7 @@ private[io] trait compressionplatform {
 
       def inflateImpl(
           inflateParams: InflateParams
-      )(f: facade.zlib.Options => facade.zlib.Zlib): Pipe[F, Byte, Byte] = in => {
+      )(f:               facade.zlib.Options => facade.zlib.Zlib): Pipe[F, Byte, Byte] = in => {
         val options = new facade.zlib.Options {
           chunkSize = inflateParams.bufferSizeOrMinimum
         }

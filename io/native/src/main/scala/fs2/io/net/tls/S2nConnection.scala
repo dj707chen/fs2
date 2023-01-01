@@ -59,59 +59,59 @@ private[tls] trait S2nConnection[F[_]] {
 
 private[tls] object S2nConnection {
   def apply[F[_]](
-      socket: Socket[F],
+      socket:     Socket[F],
       clientMode: Boolean,
-      config: S2nConfig,
+      config:     S2nConfig,
       parameters: TLSParameters
-  )(implicit F: Async[F]): Resource[F, S2nConnection[F]] =
+  )(implicit F:   Async[F]): Resource[F, S2nConnection[F]] =
     for {
       gcRoot <- mkGcRoot
 
       conn <- Resource.make(
-        F.delay(guard(s2n_connection_new(if (clientMode) S2N_CLIENT.toUInt else S2N_SERVER.toUInt)))
-      )(conn => F.delay(guard_(s2n_connection_free(conn))))
+                F.delay(guard(s2n_connection_new(if (clientMode) S2N_CLIENT.toUInt else S2N_SERVER.toUInt)))
+              )(conn => F.delay(guard_(s2n_connection_free(conn))))
 
       _ <- F.delay(guard_(s2n_connection_set_config(conn, config.ptr))).toResource
       _ <- parameters.configure(conn)
       _ <- F.delay {
-        guard_(s2n_connection_set_blinding(conn, S2N_SELF_SERVICE_BLINDING.toUInt))
-      }.toResource
+             guard_(s2n_connection_set_blinding(conn, S2N_SELF_SERVICE_BLINDING.toUInt))
+           }.toResource
 
-      privateKeyTasks <- F.delay(new AtomicReference[F[Unit]](F.unit)).toResource
+      privateKeyTasks        <- F.delay(new AtomicReference[F[Unit]](F.unit)).toResource
       privateKeyCleanupTasks <- F.delay(new AtomicReference[F[Unit]](F.unit)).toResource
-      _ <- Resource.eval {
-        F.delay {
-          val ctx = ConnectionContext(privateKeyTasks, privateKeyCleanupTasks, F)
-          guard_(s2n_connection_set_ctx(conn, toPtr(ctx)))
-          gcRoot.add(ctx)
-        }
-      }
+      _                      <- Resource.eval {
+                                  F.delay {
+                                    val ctx = ConnectionContext(privateKeyTasks, privateKeyCleanupTasks, F)
+                                    guard_(s2n_connection_set_ctx(conn, toPtr(ctx)))
+                                    gcRoot.add(ctx)
+                                  }
+                                }
 
       readBuffer <- ResizableBuffer[F](8192)
 
       recvBuffer <- Resource.eval {
-        F.delay(new AtomicReference[Option[ByteVector]](Some(ByteVector.empty)))
-      }
-      readTasks <- F.delay(new AtomicReference[F[Unit]](F.unit)).toResource
-      _ <- Resource.eval {
-        F.delay {
-          val ctx = RecvCallbackContext(recvBuffer, readTasks, socket, F)
-          guard_(s2n_connection_set_recv_ctx(conn, toPtr(ctx)))
-          guard_(s2n_connection_set_recv_cb(conn, recvCallback[F](_, _, _)))
-          gcRoot.add(ctx)
-        }
-      }
+                      F.delay(new AtomicReference[Option[ByteVector]](Some(ByteVector.empty)))
+                    }
+      readTasks  <- F.delay(new AtomicReference[F[Unit]](F.unit)).toResource
+      _          <- Resource.eval {
+                      F.delay {
+                        val ctx = RecvCallbackContext(recvBuffer, readTasks, socket, F)
+                        guard_(s2n_connection_set_recv_ctx(conn, toPtr(ctx)))
+                        guard_(s2n_connection_set_recv_cb(conn, recvCallback[F](_, _, _)))
+                        gcRoot.add(ctx)
+                      }
+                    }
 
       sendAvailable <- F.delay(new AtomicBoolean(true)).toResource
-      writeTasks <- F.delay(new AtomicReference[F[Unit]](F.unit)).toResource
-      _ <- Resource.eval {
-        F.delay {
-          val ctx = SendCallbackContext(sendAvailable, writeTasks, socket, F)
-          guard_(s2n_connection_set_send_ctx(conn, toPtr(ctx)))
-          guard_(s2n_connection_set_send_cb(conn, sendCallback[F](_, _, _)))
-          gcRoot.add(ctx)
-        }
-      }
+      writeTasks    <- F.delay(new AtomicReference[F[Unit]](F.unit)).toResource
+      _             <- Resource.eval {
+                         F.delay {
+                           val ctx = SendCallbackContext(sendAvailable, writeTasks, socket, F)
+                           guard_(s2n_connection_set_send_ctx(conn, toPtr(ctx)))
+                           guard_(s2n_connection_set_send_cb(conn, sendCallback[F](_, _, _)))
+                           gcRoot.add(ctx)
+                         }
+                       }
 
     } yield new S2nConnection[F] {
 
@@ -127,8 +127,8 @@ private[tls] object S2nConnection {
         }.guaranteeCase { oc =>
           blindingSleep.whenA(oc.isError)
         }.productL {
-          val reads = F.delay(readTasks.get).flatten
-          val writes = F.delay(writeTasks.get).flatten
+          val reads   = F.delay(readTasks.get).flatten
+          val writes  = F.delay(writeTasks.get).flatten
           val pkeyOps = F.delay(privateKeyTasks.get).flatten
           reads.both(writes).both(pkeyOps)
         }.guarantee {
@@ -141,7 +141,7 @@ private[tls] object S2nConnection {
           F.delay {
             readTasks.set(F.unit)
             val blocked = stackalloc[s2n_blocked_status]()
-            val readed = guard(s2n_recv(conn, buf + i.toLong, (n - i).toLong, blocked))
+            val readed  = guard(s2n_recv(conn, buf + i.toLong, (n - i).toLong, blocked))
             (!blocked, Math.max(readed, 0))
           }.guaranteeCase { oc =>
             blindingSleep.whenA(oc.isError)
@@ -171,7 +171,7 @@ private[tls] object S2nConnection {
           F.delay {
             writeTasks.set(F.unit)
             val blocked = stackalloc[s2n_blocked_status]()
-            val wrote = guard(s2n_send(conn, buf.at(offset + i), (n - i).toLong, blocked))
+            val wrote   = guard(s2n_send(conn, buf.at(offset + i), (n - i).toLong, blocked))
             (!blocked, Math.max(wrote, 0))
           }.productL(F.delay(writeTasks.get).flatten)
             .flatMap { case (blocked, wrote) =>
@@ -192,7 +192,7 @@ private[tls] object S2nConnection {
         }.guaranteeCase { oc =>
           blindingSleep.whenA(oc.isError)
         }.productL {
-          val reads = F.delay(readTasks.get).flatten
+          val reads  = F.delay(readTasks.get).flatten
           val writes = F.delay(writeTasks.get).flatten
           reads.both(writes)
         }.iterateUntil(_.toInt == S2N_NOT_BLOCKED)
@@ -202,8 +202,8 @@ private[tls] object S2nConnection {
         F.delay(guard(s2n_get_application_protocol(conn))).map(fromCString(_))
 
       def session = F.delay {
-        val len = guard(s2n_connection_get_session_length(conn))
-        val buf = new Array[Byte](len)
+        val len    = guard(s2n_connection_get_session_length(conn))
+        val buf    = new Array[Byte](len)
         val copied = guard(s2n_connection_get_session(conn, buf.at(0), len.toUInt))
         new SSLSession(ByteVector.view(buf, 0, copied))
       }
@@ -214,20 +214,20 @@ private[tls] object S2nConnection {
     }
 
   final case class ConnectionContext[F[_]](
-      privateKeyTasks: AtomicReference[F[Unit]],
+      privateKeyTasks:        AtomicReference[F[Unit]],
       privateKeyCleanupTasks: AtomicReference[F[Unit]],
-      async: Async[F]
+      async:                  Async[F]
   )
 
   private final case class RecvCallbackContext[F[_]](
       recvBuffer: AtomicReference[Option[ByteVector]],
-      readTasks: AtomicReference[F[Unit]],
-      socket: Socket[F],
-      async: Async[F]
+      readTasks:  AtomicReference[F[Unit]],
+      socket:     Socket[F],
+      async:      Async[F]
   )
 
   private def recvCallback[F[_]](ioContext: Ptr[Byte], buf: Ptr[Byte], len: CUnsignedInt): CInt = {
-    val ctx = fromPtr[RecvCallbackContext[F]](ioContext)
+    val ctx        = fromPtr[RecvCallbackContext[F]](ioContext)
     import ctx._
     implicit val F = async
 
@@ -237,25 +237,25 @@ private[tls] object S2nConnection {
       case Some(bytes) if bytes.nonEmpty =>
         bytes.copyToPtr(buf, 0)
         bytes.length.toInt
-      case Some(_) =>
+      case Some(_)                       =>
         val readTask =
           socket.read(len.toInt).flatMap(b => F.delay(recvBuffer.set(b.map(_.toByteVector)))).void
         readTasks.getAndUpdate(_ *> readTask)
         libc.errno.errno = posix.errno.EWOULDBLOCK
         S2N_FAILURE
-      case None => 0
+      case None                          => 0
     }
   }
 
   private final case class SendCallbackContext[F[_]](
       sendAvailable: AtomicBoolean,
-      writeTasks: AtomicReference[F[Unit]],
-      socket: Socket[F],
-      async: Async[F]
+      writeTasks:    AtomicReference[F[Unit]],
+      socket:        Socket[F],
+      async:         Async[F]
   )
 
   private def sendCallback[F[_]](ioContext: Ptr[Byte], buf: Ptr[Byte], len: CUnsignedInt): CInt = {
-    val ctx = fromPtr[SendCallbackContext[F]](ioContext)
+    val ctx        = fromPtr[SendCallbackContext[F]](ioContext)
     import ctx._
     implicit val F = async
 

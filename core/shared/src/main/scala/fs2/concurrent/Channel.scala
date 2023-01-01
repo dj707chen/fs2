@@ -128,11 +128,11 @@ object Channel {
 
   def bounded[F[_], A](capacity: Int)(implicit F: Concurrent[F]): F[Channel[F, A]] = {
     case class State(
-        values: List[A],
-        size: Int,
-        waiting: Option[Deferred[F, Unit]],
+        values:    List[A],
+        size:      Int,
+        waiting:   Option[Deferred[F, Unit]],
         producers: List[(A, Deferred[F, Unit])],
-        closed: Boolean
+        closed:    Boolean
     )
 
     val open = State(List.empty, 0, None, List.empty, closed = false)
@@ -226,9 +226,9 @@ object Channel {
                         closed
                       ) =>
                     if (shouldEmit(s)) {
-                      var size = stateSize
+                      var size       = stateSize
                       val tailValues = List.newBuilder[A]
-                      var unblock = F.unit
+                      var unblock    = F.unit
 
                       producers.foreach { case (value, producer) =>
                         size += 1
@@ -265,8 +265,8 @@ object Channel {
         @inline private def shouldEmit(s: State) = s.values.nonEmpty || s.producers.nonEmpty
 
         private def makeChunk(init: List[A], tail: List[A], size: Int): Chunk[A] = {
-          val arr = new Array[Any](size)
-          var i = size - 1
+          val arr    = new Array[Any](size)
+          var i      = size - 1
           var values = tail
           while (i >= 0) {
             if (values.isEmpty) values = init
@@ -281,9 +281,9 @@ object Channel {
   }
 
   // allocate once
-  @inline private final def closed[A]: Either[Closed, A] = _closed
-  private[this] final val _closed: Either[Closed, Nothing] = Left(Closed)
-  private final val rightUnit: Either[Closed, Unit] = Right(())
-  private final val rightTrue: Either[Closed, Boolean] = Right(true)
-  private final val rightFalse: Either[Closed, Boolean] = Right(false)
+  @inline private final def closed[A]: Either[Closed, A]       = _closed
+  private[this] final val _closed:     Either[Closed, Nothing] = Left(Closed)
+  private final val rightUnit:         Either[Closed, Unit]    = Right(())
+  private final val rightTrue:         Either[Closed, Boolean] = Right(true)
+  private final val rightFalse:        Either[Closed, Boolean] = Right(false)
 }

@@ -30,7 +30,7 @@ package object net {
   @js.native
   @JSImport("net", "createServer")
   private[io] def createServer(
-      options: ServerOptions,
+      options:            ServerOptions,
       connectionListener: js.Function1[Socket, Unit]
   ): Server =
     js.native
@@ -58,7 +58,7 @@ package net {
   @js.native
   private[io] trait ServerAddress extends js.Object {
     def address: String = js.native
-    def port: Int = js.native
+    def port:    Int    = js.native
   }
 
   private[io] trait ServerOptions extends js.Object {

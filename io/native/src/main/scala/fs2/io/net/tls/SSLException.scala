@@ -24,8 +24,6 @@ package net.tls
 
 import scala.scalanative.unsafe._
 
-class SSLException(message: String = null, cause: Throwable = null)
-    extends IOException(message, cause)
+class SSLException(message: String = null, cause: Throwable = null) extends IOException(message, cause)
 
-private[tls] final class S2nException(error: CInt)
-    extends SSLException(fromCString(s2n.s2n_strerror(error, c"EN")))
+private[tls] final class S2nException(error: CInt) extends SSLException(fromCString(s2n.s2n_strerror(error, c"EN")))

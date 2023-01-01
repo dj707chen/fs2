@@ -39,11 +39,11 @@ private[io] trait SuspendedStream[F[_], O] {
 
 private[io] object SuspendedStream {
   def apply[F[_], O](
-      stream: Stream[F, O]
+      stream:   Stream[F, O]
   )(implicit F: Concurrent[F]): Resource[F, SuspendedStream[F, O]] =
     for {
-      queue <- Queue.synchronous[F, Option[Either[Throwable, Chunk[O]]]].toResource
-      _ <- stream.chunks.attempt.enqueueNoneTerminated(queue).compile.drain.background
+      queue     <- Queue.synchronous[F, Option[Either[Throwable, Chunk[O]]]].toResource
+      _         <- stream.chunks.attempt.enqueueNoneTerminated(queue).compile.drain.background
       suspended <- F.ref(streamFromQueue(queue)).toResource
       semaphore <- Semaphore[F](1).toResource
     } yield new SuspendedStream[F, O] {

@@ -57,10 +57,10 @@ private[tls] trait TLSContextCompanionPlatform { self: TLSContext.type =>
             SocketBuilder(mkSocket(socket, false, _, _))
 
           private def mkSocket(
-              socket: Socket[F],
+              socket:     Socket[F],
               clientMode: Boolean,
-              params: TLSParameters,
-              logger: TLSLogger[F]
+              params:     TLSParameters,
+              logger:     TLSLogger[F]
           ): Resource[F, TLSSocket[F]] = {
             val _ = logger
             S2nConnection(socket, clientMode, cfg, params).flatMap(TLSSocket(socket, _))

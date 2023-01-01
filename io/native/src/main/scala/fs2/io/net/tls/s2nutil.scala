@@ -38,7 +38,7 @@ import s2n._
 private[tls] object s2nutil {
   @alwaysinline def guard_(thunk: => CInt): Unit =
     if (thunk != S2N_SUCCESS) {
-      val error = !s2n_errno_location()
+      val error     = !s2n_errno_location()
       val errorType = s2n_error_get_type(error)
       if (errorType != S2N_ERR_T_BLOCKED)
         throw new S2nException(error)
@@ -47,7 +47,7 @@ private[tls] object s2nutil {
   @alwaysinline def guard[A](thunk: => CInt): CInt = {
     val rtn = thunk
     if (rtn < 0) {
-      val error = !s2n_errno_location()
+      val error     = !s2n_errno_location()
       val errorType = s2n_error_get_type(error)
       if (errorType != S2N_ERR_T_BLOCKED)
         throw new S2nException(error)
@@ -76,8 +76,8 @@ private[tls] object s2nutil {
   )(gcr => F.delay(gcr.clear()))
 
   def s2nVerifyHostFn(hostName: Ptr[CChar], hostNameLen: CSize, data: Ptr[Byte]): Byte = {
-    val cb = fromPtr[String => SyncIO[Boolean]](data)
-    val hn = ByteVector.fromPtr(hostName, hostNameLen.toLong).decodeAsciiLenient
+    val cb    = fromPtr[String => SyncIO[Boolean]](data)
+    val hn    = ByteVector.fromPtr(hostName, hostNameLen.toLong).decodeAsciiLenient
     val trust = cb(hn).unsafeRunSync()
     if (trust) 1 else 0
   }

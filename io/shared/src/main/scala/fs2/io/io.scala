@@ -35,10 +35,10 @@ package object io extends ioplatform {
     * Set `closeAfterUse` to false if the `InputStream` should not be closed after use.
     */
   def readInputStream[F[_]](
-      fis: F[InputStream],
-      chunkSize: Int,
+      fis:           F[InputStream],
+      chunkSize:     Int,
       closeAfterUse: Boolean = true
-  )(implicit F: Sync[F]): Stream[F, Byte] =
+  )(implicit F:      Sync[F]): Stream[F, Byte] =
     readInputStreamGeneric(
       fis,
       F.delay(new Array[Byte](chunkSize)),
@@ -54,10 +54,10 @@ package object io extends ioplatform {
     * `readInputStream` for a safe version.
     */
   def unsafeReadInputStream[F[_]](
-      fis: F[InputStream],
-      chunkSize: Int,
+      fis:           F[InputStream],
+      chunkSize:     Int,
       closeAfterUse: Boolean = true
-  )(implicit F: Sync[F]): Stream[F, Byte] =
+  )(implicit F:      Sync[F]): Stream[F, Byte] =
     readInputStreamGeneric(
       fis,
       F.pure(new Array[Byte](chunkSize)),
@@ -65,7 +65,7 @@ package object io extends ioplatform {
     )
 
   private def readBytesFromInputStream[F[_]](is: InputStream, buf: Array[Byte])(implicit
-      F: Sync[F]
+      F:                                         Sync[F]
   ): F[Option[Chunk[Byte]]] =
     F.blocking(is.read(buf)).map { numBytes =>
       if (numBytes < 0) None
@@ -75,10 +75,10 @@ package object io extends ioplatform {
     }
 
   private def readInputStreamGeneric[F[_]](
-      fis: F[InputStream],
-      buf: F[Array[Byte]],
+      fis:           F[InputStream],
+      buf:           F[Array[Byte]],
       closeAfterUse: Boolean
-  )(implicit F: Sync[F]): Stream[F, Byte] = {
+  )(implicit F:      Sync[F]): Stream[F, Byte] = {
     def useIs(is: InputStream) =
       Stream
         .eval(buf.flatMap(b => readBytesFromInputStream(is, b)))
@@ -99,9 +99,9 @@ package object io extends ioplatform {
     * blocking so the execution context should be configured appropriately.
     */
   def writeOutputStream[F[_]](
-      fos: F[OutputStream],
+      fos:           F[OutputStream],
       closeAfterUse: Boolean = true
-  )(implicit F: Sync[F]): Pipe[F, Byte, Nothing] =
+  )(implicit F:      Sync[F]): Pipe[F, Byte, Nothing] =
     s => {
       def useOs(os: OutputStream): Stream[F, Nothing] =
         s.chunks.foreach(c => F.interruptible(os.write(c.toArray)))

@@ -32,10 +32,10 @@ object BlockCodec {
 
   private def commonStructure[A, L <: HList, LB <: HList](
       blockType: Codec[A]
-  )(f: Length => Codec[L])(implicit
-      prepend: Prepend.Aux[L, Unit :: HNil, LB],
-      init: Init.Aux[LB, L],
-      last: Last.Aux[LB, Unit]
+  )(f:           Length => Codec[L])(implicit
+      prepend:   Prepend.Aux[L, Unit :: HNil, LB],
+      init:      Init.Aux[LB, L],
+      last:      Last.Aux[LB, Unit]
   ): Codec[A :: Length :: LB] =
   // format: off
     ("Block Type"             | blockType                           ) ::
@@ -44,27 +44,26 @@ object BlockCodec {
     ("Block Total Length"     | constant(length.bv)                 )}
   // format: on
 
-  def unknownByteOrder[L <: HList, LB <: HList](hexConstant: ByteVector)(f: Length => Codec[L])(
-      implicit
-      prepend: Prepend.Aux[L, Unit :: HNil, LB],
-      init: Init.Aux[LB, L],
-      last: Last.Aux[LB, Unit]
+  def unknownByteOrder[L <: HList, LB <: HList](hexConstant: ByteVector)(f: Length => Codec[L])(implicit
+      prepend:                                               Prepend.Aux[L, Unit :: HNil, LB],
+      init:                                                  Init.Aux[LB, L],
+      last:                                                  Last.Aux[LB, Unit]
   ): Codec[Unit :: Length :: LB] = commonStructure(constant(hexConstant))(f)
 
   def byBlockBytesCodec[L <: HList, LB <: HList](
-      hexConstant: ByteVector,
+      hexConstant:     ByteVector,
       blockBytesCodec: Codec[L]
   )(implicit
-      prepend: Prepend.Aux[L, Unit :: HNil, LB],
-      init: Init.Aux[LB, L],
-      last: Last.Aux[LB, Unit],
-      ord: ByteOrdering
+      prepend:         Prepend.Aux[L, Unit :: HNil, LB],
+      init:            Init.Aux[LB, L],
+      last:            Last.Aux[LB, Unit],
+      ord:             ByteOrdering
   ): Codec[Unit :: Length :: LB] =
     unknownByteOrder(hexConstant)(length => fixedSizeBytes(length.toLong - 12, blockBytesCodec))
 
   def ignored(
       hexConstant: ByteVector
-  )(implicit ord: ByteOrdering): Codec[Length :: ByteVector :: HNil] =
+  )(implicit ord:  ByteOrdering): Codec[Length :: ByteVector :: HNil] =
     unknownByteOrder(hexConstant) { length =>
       fixedSizeBytes(length.toLong - 12, bytes) :: Codec.deriveHNil
     }.dropUnits

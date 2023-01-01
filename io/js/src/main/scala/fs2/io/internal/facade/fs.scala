@@ -49,23 +49,23 @@ package object fs {
   @js.native
   @JSImport("fs", "read")
   private[io] def read(
-      fd: Int,
-      buffer: Uint8Array,
-      offset: Int,
-      length: Int,
+      fd:       Int,
+      buffer:   Uint8Array,
+      offset:   Int,
+      length:   Int,
       position: js.BigInt,
-      cb: js.Function3[js.Error, Int, Uint8Array, Unit]
+      cb:       js.Function3[js.Error, Int, Uint8Array, Unit]
   ): Unit = js.native
 
   @js.native
   @JSImport("fs", "write")
   private[io] def write(
-      fd: Int,
-      buffer: Uint8Array,
-      offset: Int,
-      length: Int,
+      fd:       Int,
+      buffer:   Uint8Array,
+      offset:   Int,
+      length:   Int,
       position: js.BigInt,
-      cb: js.Function3[js.Error, Int, Uint8Array, Unit]
+      cb:       js.Function3[js.Error, Int, Uint8Array, Unit]
   ): Unit = js.native
 
 }

@@ -43,8 +43,8 @@ object TimeSeries {
 
   /** Stream of either time ticks (spaced by `tickPeriod`) or values from the source stream. */
   def apply[F[_]: Temporal, A](
-      source: Stream[F, TimeStamped[A]],
-      tickPeriod: FiniteDuration,
+      source:      Stream[F, TimeStamped[A]],
+      tickPeriod:  FiniteDuration,
       reorderOver: FiniteDuration
   ): Stream[F, TimeStamped[Option[A]]] =
     apply(source, tickPeriod, reorderOver, false)
@@ -57,12 +57,12 @@ object TimeSeries {
     * then `monotonic` must be set to true.
     */
   def apply[F[_]: Temporal, A](
-      source: Stream[F, TimeStamped[A]],
-      tickPeriod: FiniteDuration,
+      source:      Stream[F, TimeStamped[A]],
+      tickPeriod:  FiniteDuration,
       reorderOver: FiniteDuration,
-      monotonic: Boolean
+      monotonic:   Boolean
   ): Stream[F, TimeStamped[Option[A]]] = {
-    val src: Stream[F, TimeStamped[Option[A]]] = source.map(tsa => tsa.map(Some(_): Option[A]))
+    val src:   Stream[F, TimeStamped[Option[A]]]       = source.map(tsa => tsa.map(Some(_): Option[A]))
     val ticks: Stream[F, TimeStamped[Option[Nothing]]] =
       timeTicks(tickPeriod, monotonic).map(tsu => tsu.map(_ => None))
     src.merge(ticks).through(TimeStamped.reorderLocally(reorderOver))
@@ -75,8 +75,8 @@ object TimeSeries {
     * `monotonic` parameter.
     */
   def timePulled[F[_]: Temporal, A](
-      source: Stream[F, A],
-      tickPeriod: FiniteDuration,
+      source:      Stream[F, A],
+      tickPeriod:  FiniteDuration,
       reorderOver: FiniteDuration
   ): Stream[F, TimeStamped[Option[A]]] =
     apply(source.map(TimeStamped.unsafeRealTime), tickPeriod, reorderOver)
@@ -87,15 +87,13 @@ object TimeSeries {
     *  increasing counter (e.g. System.nanoTime) or the current system time.
     */
   def timePulled[F[_]: Temporal, A](
-      source: Stream[F, A],
-      tickPeriod: FiniteDuration,
+      source:      Stream[F, A],
+      tickPeriod:  FiniteDuration,
       reorderOver: FiniteDuration,
-      monotonic: Boolean
+      monotonic:   Boolean
   ): Stream[F, TimeStamped[Option[A]]] =
     apply(
-      source.map(a =>
-        if (monotonic) TimeStamped.unsafeMonotonic(a) else TimeStamped.unsafeRealTime(a)
-      ),
+      source.map(a => if (monotonic) TimeStamped.unsafeMonotonic(a) else TimeStamped.unsafeRealTime(a)),
       tickPeriod,
       reorderOver,
       monotonic
@@ -108,16 +106,14 @@ object TimeSeries {
     _.map(_.map(_.map(f)))
 
   /** Time series pipe which discards right values. */
-  def drainRight[F[_], L, R]
-      : Stream[F, TimeStamped[Option[Either[L, R]]]] => Stream[F, TimeStamped[Option[L]]] =
+  def drainRight[F[_], L, R]: Stream[F, TimeStamped[Option[Either[L, R]]]] => Stream[F, TimeStamped[Option[L]]] =
     _.collect {
       case tick @ TimeStamped(_, None)    => tick.asInstanceOf[TimeStamped[Option[L]]]
       case TimeStamped(ts, Some(Left(l))) => TimeStamped(ts, Some(l))
     }
 
   /** Time series pipe which discards left values. */
-  def drainLeft[F[_], L, R]
-      : Stream[F, TimeStamped[Option[Either[L, R]]]] => Stream[F, TimeStamped[Option[R]]] =
+  def drainLeft[F[_], L, R]: Stream[F, TimeStamped[Option[Either[L, R]]]] => Stream[F, TimeStamped[Option[R]]] =
     _.collect {
       case tick @ TimeStamped(_, None)     => tick.asInstanceOf[TimeStamped[Option[R]]]
       case TimeStamped(ts, Some(Right(r))) => TimeStamped(ts, Some(r))
@@ -126,7 +122,7 @@ object TimeSeries {
   /** Stream of time ticks spaced by `tickPeriod`. */
   private def timeTicks[F[_]: Temporal](
       tickPeriod: FiniteDuration,
-      monotonic: Boolean
+      monotonic:  Boolean
   ): Stream[F, TimeStamped[Unit]] =
     Stream
       .awakeEvery[F](tickPeriod)
@@ -141,34 +137,34 @@ object TimeSeries {
   ): Stream[F, TimeStamped[A]] => Stream[F, TimeStamped[Option[A]]] = {
     def go(
         nextTick: FiniteDuration,
-        s: Stream[F, TimeStamped[A]]
+        s:        Stream[F, TimeStamped[A]]
     ): Pull[F, TimeStamped[Option[A]], Unit] = {
       def tickTime(x: Int) = nextTick + (x * tickPeriod)
       s.pull.uncons.flatMap {
         case Some((hd, tl)) =>
           hd.indexWhere(_.time >= nextTick) match {
-            case None =>
+            case None      =>
               Pull.output(hd.map(_.map(Some(_)))) >> go(nextTick, tl)
             case Some(idx) =>
               val (prefix, suffix) = hd.splitAt(idx)
-              val out = Pull.output(prefix.map(_.map(Some(_))))
+              val out              = Pull.output(prefix.map(_.map(Some(_))))
               // we know suffix is non-empty and suffix.head has a time >= next tick time
-              val next = suffix(0)
-              val tickCount =
+              val next             = suffix(0)
+              val tickCount        =
                 ((next.time.toMillis - nextTick.toMillis) / tickPeriod.toMillis + 1).toInt
-              val tickTimes = (0 until tickCount).map(tickTime)
-              val ticks = tickTimes.map(TimeStamped.tick)
-              val rest = Pull.output(Chunk.seq(ticks)) >> go(tickTime(tickCount), tl.cons(suffix))
+              val tickTimes        = (0 until tickCount).map(tickTime)
+              val ticks            = tickTimes.map(TimeStamped.tick)
+              val rest             = Pull.output(Chunk.seq(ticks)) >> go(tickTime(tickCount), tl.cons(suffix))
               out >> rest
           }
-        case None => Pull.done
+        case None           => Pull.done
       }
     }
     in =>
       in.pull.uncons1.flatMap {
         case Some((hd, tl)) =>
           Pull.output1(hd.map(Some(_))) >> go(hd.time + tickPeriod, tl)
-        case None => Pull.done
+        case None           => Pull.done
       }.stream
   }
 
@@ -201,13 +197,13 @@ object TimeSeries {
     Scan[(LS, RS), TimeStamped[Option[Either[L, R]]], O]((l.initial, r.initial))(
       { case ((lState, rState), tsv) =>
         tsv match {
-          case TimeStamped(t, Some(Left(lValue))) =>
+          case TimeStamped(t, Some(Left(lValue)))  =>
             val (s, out) = l.transform(lState, TimeStamped(t, Some(lValue)))
             (s -> rState, out)
           case TimeStamped(t, Some(Right(rValue))) =>
             val (s, out) = r.transform(rState, TimeStamped(t, Some(rValue)))
             (lState -> s, out)
-          case TimeStamped(t, None) =>
+          case TimeStamped(t, None)                =>
             val (ls, lout) = l.transform(lState, TimeStamped(t, None))
             val (rs, rout) = r.transform(rState, TimeStamped(t, None))
             ((ls, rs), lout ++ rout)

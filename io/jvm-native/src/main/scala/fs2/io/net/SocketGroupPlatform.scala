@@ -24,12 +24,7 @@ package io
 package net
 
 import java.net.InetSocketAddress
-import java.nio.channels.{
-  AsynchronousCloseException,
-  AsynchronousServerSocketChannel,
-  AsynchronousSocketChannel,
-  CompletionHandler
-}
+import java.nio.channels.{AsynchronousCloseException, AsynchronousServerSocketChannel, AsynchronousSocketChannel, CompletionHandler}
 import java.nio.channels.AsynchronousChannelGroup
 import cats.syntax.all._
 import cats.effect.kernel.{Async, Resource}
@@ -39,11 +34,10 @@ private[net] trait SocketGroupCompanionPlatform { self: SocketGroup.type =>
   private[fs2] def unsafe[F[_]: Async](channelGroup: AsynchronousChannelGroup): SocketGroup[F] =
     new AsyncSocketGroup[F](channelGroup)
 
-  private final class AsyncSocketGroup[F[_]: Async](channelGroup: AsynchronousChannelGroup)
-      extends AbstractAsyncSocketGroup[F] {
+  private final class AsyncSocketGroup[F[_]: Async](channelGroup: AsynchronousChannelGroup) extends AbstractAsyncSocketGroup[F] {
 
     def client(
-        to: SocketAddress[Host],
+        to:      SocketAddress[Host],
         options: List[SocketOption]
     ): Resource[F, Socket[F]] = {
       def setup: Resource[F, AsynchronousSocketChannel] =
@@ -64,7 +58,7 @@ private[net] trait SocketGroupCompanionPlatform { self: SocketGroup.type =>
               new CompletionHandler[Void, Void] {
                 def completed(result: Void, attachment: Void): Unit =
                   cb(Right(ch))
-                def failed(rsn: Throwable, attachment: Void): Unit =
+                def failed(rsn: Throwable, attachment: Void):  Unit =
                   cb(Left(rsn))
               }
             )
@@ -76,7 +70,7 @@ private[net] trait SocketGroupCompanionPlatform { self: SocketGroup.type =>
 
     def serverResource(
         address: Option[Host],
-        port: Option[Port],
+        port:    Option[Port],
         options: List[SocketOption]
     ): Resource[F, (SocketAddress[IpAddress], Stream[F, Socket[F]])] = {
 
@@ -111,7 +105,7 @@ private[net] trait SocketGroupCompanionPlatform { self: SocketGroup.type =>
                 new CompletionHandler[AsynchronousSocketChannel, Void] {
                   def completed(ch: AsynchronousSocketChannel, attachment: Void): Unit =
                     cb(Right(ch))
-                  def failed(rsn: Throwable, attachment: Void): Unit =
+                  def failed(rsn: Throwable, attachment: Void):                   Unit =
                     cb(Left(rsn))
                 }
               )
@@ -123,7 +117,7 @@ private[net] trait SocketGroupCompanionPlatform { self: SocketGroup.type =>
             }
 
           Stream.eval(acceptChannel.attempt).flatMap {
-            case Left(_) => Stream.empty[F]
+            case Left(_)         => Stream.empty[F]
             case Right(accepted) =>
               Stream.resource(Socket.forAsync(accepted).evalTap(_ => setOpts(accepted)))
           } ++ go
@@ -141,7 +135,7 @@ private[net] trait SocketGroupCompanionPlatform { self: SocketGroup.type =>
 
       setup.map { sch =>
         val jLocalAddress = sch.getLocalAddress.asInstanceOf[java.net.InetSocketAddress]
-        val localAddress = SocketAddress.fromInetSocketAddress(jLocalAddress)
+        val localAddress  = SocketAddress.fromInetSocketAddress(jLocalAddress)
         (localAddress, acceptIncoming(sch))
       }
     }

@@ -43,11 +43,11 @@ object checksum {
     * @see [[scodec.bits.crc]]
     */
   def crc[F[_]](
-      poly: BitVector,
-      initial: BitVector,
-      reflectInput: Boolean,
+      poly:          BitVector,
+      initial:       BitVector,
+      reflectInput:  Boolean,
       reflectOutput: Boolean,
-      finalXor: BitVector
+      finalXor:      BitVector
   ): Pipe[F, Byte, Byte] =
     fromCrcBuilder(bits.crc.builder(poly, initial, reflectInput, reflectOutput, finalXor))
 

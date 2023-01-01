@@ -131,8 +131,7 @@ package tls {
 
     var servername: js.UndefOr[String] = js.undefined
 
-    var checkServerIdentity
-        : js.UndefOr[js.Function2[String, PeerCertificate, js.UndefOr[js.Error]]] =
+    var checkServerIdentity: js.UndefOr[js.Function2[String, PeerCertificate, js.UndefOr[js.Error]]] =
       js.undefined
 
     var minDHSize: js.UndefOr[Int] = js.undefined

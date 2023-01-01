@@ -44,7 +44,7 @@ private[net] trait SocketCompanionPlatform {
 
   private[net] abstract class BufferedReads[F[_]](
       readSemaphore: Semaphore[F]
-  )(implicit F: Async[F])
+  )(implicit F:      Async[F])
       extends Socket[F] {
     private[this] final val defaultReadSize = 8192
     private[this] var readBuffer: ByteBuffer = ByteBuffer.allocateDirect(defaultReadSize)
@@ -66,7 +66,7 @@ private[net] trait SocketCompanionPlatform {
     /** Copies the contents of the supplied buffer to a `Chunk[Byte]` and clears the buffer contents. */
     private def releaseBuffer(buffer: ByteBuffer): F[Chunk[Byte]] =
       F.delay {
-        val read = buffer.position()
+        val read   = buffer.position()
         val result =
           if (read == 0) Chunk.empty
           else {
@@ -106,10 +106,10 @@ private[net] trait SocketCompanionPlatform {
   }
 
   private final class AsyncSocket[F[_]](
-      ch: AsynchronousSocketChannel,
-      readSemaphore: Semaphore[F],
+      ch:             AsynchronousSocketChannel,
+      readSemaphore:  Semaphore[F],
       writeSemaphore: Semaphore[F]
-  )(implicit F: Async[F])
+  )(implicit F:       Async[F])
       extends BufferedReads[F](readSemaphore) {
 
     protected def readChunk(buffer: ByteBuffer): F[Int] =
@@ -174,9 +174,8 @@ private[net] trait SocketCompanionPlatform {
       }
   }
 
-  private final class IntCompletionHandler(cb: Either[Throwable, Int] => Unit)
-      extends CompletionHandler[Integer, AnyRef] {
-    def completed(i: Integer, attachment: AnyRef) =
+  private final class IntCompletionHandler(cb: Either[Throwable, Int] => Unit) extends CompletionHandler[Integer, AnyRef] {
+    def completed(i: Integer, attachment: AnyRef)  =
       cb(Right(i))
     def failed(err: Throwable, attachment: AnyRef) =
       cb(Left(err))

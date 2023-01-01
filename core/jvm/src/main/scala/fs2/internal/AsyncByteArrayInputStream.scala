@@ -32,14 +32,14 @@ import java.io.InputStream
   * result in invalid continuations.
   */
 private[fs2] final class AsyncByteArrayInputStream(val bound: Int) extends InputStream {
-  private[this] val bytes = new mutable.ListBuffer[Array[Byte]]
+  private[this] val bytes      = new mutable.ListBuffer[Array[Byte]]
   private[this] var headOffset = 0
   private[this] var _available = 0
 
   // checkpoint
-  private[this] var cbytes: List[Array[Byte]] = _
-  private[this] var cheadOffset: Int = _
-  private[this] var cavailable: Int = _
+  private[this] var cbytes:      List[Array[Byte]] = _
+  private[this] var cheadOffset: Int               = _
+  private[this] var cavailable:  Int               = _
 
   def checkpoint(): Unit = {
     cbytes = bytes.toList // we can do better here, probably
@@ -69,7 +69,7 @@ private[fs2] final class AsyncByteArrayInputStream(val bound: Int) extends Input
 
   def read(): Int = {
     val buf = new Array[Byte](1)
-    val _ = read(buf)
+    val _   = read(buf)
     buf(0) & 0xff
   }
 
@@ -77,7 +77,7 @@ private[fs2] final class AsyncByteArrayInputStream(val bound: Int) extends Input
     if (bytes.isEmpty)
       throw AsyncByteArrayInputStream.AsyncError
     else {
-      val head = bytes.head
+      val head   = bytes.head
       val copied = math.min(len, head.length - headOffset)
       System.arraycopy(head, headOffset, target, off, copied)
 

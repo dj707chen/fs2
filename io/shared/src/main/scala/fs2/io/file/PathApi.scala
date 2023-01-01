@@ -123,8 +123,8 @@ private[file] trait PathCompanionApi {
   private object algebra extends Monoid[Path] with Order[Path] with Hash[Path] with Show[Path] {
     val empty: Path = Path("")
     def combine(x: Path, y: Path): Path = x / y
-    def compare(x: Path, y: Path): Int = x.toString.compare(y.toString)
-    def hash(x: Path): Int = x.hashCode()
-    def show(t: Path): String = t.toString
+    def compare(x: Path, y: Path): Int  = x.toString.compare(y.toString)
+    def hash(x:    Path): Int = x.hashCode()
+    def show(t:    Path): String = t.toString
   }
 }

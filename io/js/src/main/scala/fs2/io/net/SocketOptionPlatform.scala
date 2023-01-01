@@ -57,7 +57,7 @@ private[net] trait SocketOptionCompanionPlatform { self: SocketOption.type =>
 
   private object Timeout extends Key[FiniteDuration] {
     override private[net] def set[F[_]: Sync](
-        sock: facade.net.Socket,
+        sock:  facade.net.Socket,
         value: FiniteDuration
     ): F[Unit] =
       Sync[F].delay {
@@ -66,9 +66,9 @@ private[net] trait SocketOptionCompanionPlatform { self: SocketOption.type =>
       }
   }
 
-  def encoding(value: String): SocketOption = apply(Encoding, value)
-  def keepAlive(value: Boolean): SocketOption = apply(KeepAlive, value)
-  def noDelay(value: Boolean): SocketOption = apply(NoDelay, value)
-  def timeout(value: FiniteDuration): SocketOption = apply(Timeout, value)
+  def encoding(value:  String):         SocketOption = apply(Encoding, value)
+  def keepAlive(value: Boolean):        SocketOption = apply(KeepAlive, value)
+  def noDelay(value:   Boolean):        SocketOption = apply(NoDelay, value)
+  def timeout(value:   FiniteDuration): SocketOption = apply(Timeout, value)
 
 }

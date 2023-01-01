@@ -29,18 +29,18 @@ import fs2.io.internal.facade
 final class Flag private (private[file] val bits: Long) extends AnyVal
 
 object Flag extends FlagCompanionApi {
-  private def apply(bits: Long): Flag = new Flag(bits)
+  private def apply(bits: Long):   Flag = new Flag(bits)
   private def apply(bits: Double): Flag = Flag(bits.toLong)
 
-  val Read = Flag(facade.fs.constants.O_RDONLY)
-  val Write = Flag(facade.fs.constants.O_WRONLY)
+  val Read   = Flag(facade.fs.constants.O_RDONLY)
+  val Write  = Flag(facade.fs.constants.O_WRONLY)
   val Append = Flag(facade.fs.constants.O_APPEND)
 
-  val Truncate = Flag(facade.fs.constants.O_TRUNC)
-  val Create = Flag(facade.fs.constants.O_CREAT)
+  val Truncate  = Flag(facade.fs.constants.O_TRUNC)
+  val Create    = Flag(facade.fs.constants.O_CREAT)
   val CreateNew = Flag(facade.fs.constants.O_CREAT.toLong | facade.fs.constants.O_EXCL.toLong)
 
-  val Sync = Flag(facade.fs.constants.O_SYNC)
+  val Sync  = Flag(facade.fs.constants.O_SYNC)
   val Dsync = Flag(facade.fs.constants.O_DSYNC)
 
   private[file] implicit val monoid: Monoid[Flag] = new Monoid[Flag] {

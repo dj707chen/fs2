@@ -52,84 +52,82 @@ object S2nConfig {
     def build[F[_]: Sync]: Resource[F, S2nConfig]
 
     def withCertChainAndKeysToStore(certKeyPairs: List[CertChainAndKey]): Builder
-    def withPemsToTrustStore(pems: List[String]): Builder
+    def withPemsToTrustStore(pems:                List[String]):          Builder
     def withWipedTrustStore: Builder
-    def withSendBufferSize(size: Int): Builder
+    def withSendBufferSize(size:   Int):                       Builder
     def withVerifyHostCallback(cb: String => SyncIO[Boolean]): Builder
     def withDisabledX509Verification: Builder
-    def withMaxCertChainDepth(maxDepth: Short): Builder
-    def withDHParams(dhparams: String): Builder
-    def withCipherPreferences(version: String): Builder
+    def withMaxCertChainDepth(maxDepth: Short):  Builder
+    def withDHParams(dhparams:          String): Builder
+    def withCipherPreferences(version:  String): Builder
   }
 
   private final case class BuilderImpl(
-      certKeyPairs: List[CertChainAndKey] = Nil,
-      pems: List[String] = Nil,
-      wipedTrustStore: Boolean = false,
-      sendBufferSize: Option[Int] = None,
-      verifyHostCallback: Option[String => SyncIO[Boolean]] = None,
+      certKeyPairs:             List[CertChainAndKey] = Nil,
+      pems:                     List[String] = Nil,
+      wipedTrustStore:          Boolean = false,
+      sendBufferSize:           Option[Int] = None,
+      verifyHostCallback:       Option[String => SyncIO[Boolean]] = None,
       disabledX509Verification: Boolean = false,
-      maxCertChainDepth: Option[Short] = None,
-      dhParams: Option[String] = None,
-      cipherPreferences: Option[String] = None
+      maxCertChainDepth:        Option[Short] = None,
+      dhParams:                 Option[String] = None,
+      cipherPreferences:        Option[String] = None
   ) extends Builder {
 
     def build[F[_]](implicit F: Sync[F]): Resource[F, S2nConfig] = for {
       gcRoot <- mkGcRoot[F]
 
-      cfg <- Resource.make(F.delay(guard(s2n_config_new())))(cfg =>
-        F.delay(guard_(s2n_config_free(cfg)))
-      )
+      cfg <- Resource.make(F.delay(guard(s2n_config_new())))(cfg => F.delay(guard_(s2n_config_free(cfg))))
 
       _ <- F.delay {
-        guard_(s2n_config_set_async_pkey_callback(cfg, asyncPkeyCallback[F](_, _)))
-      }.toResource
+             guard_(s2n_config_set_async_pkey_callback(cfg, asyncPkeyCallback[F](_, _)))
+           }.toResource
 
       _ <- F.delay(guard_(s2n_config_wipe_trust_store(cfg))).whenA(wipedTrustStore).toResource
 
       _ <- certKeyPairs.traverse_ { pair =>
-        pair.toS2n.evalMap { ptr =>
-          F.delay(guard_(s2n_config_add_cert_chain_and_key_to_store(cfg, ptr)))
-        }
-      }
+             pair.toS2n.evalMap { ptr =>
+               F.delay(guard_(s2n_config_add_cert_chain_and_key_to_store(cfg, ptr)))
+             }
+           }
 
       _ <- pems.traverse_ { pem =>
-        F.delay {
-          guard_(s2n_config_add_pem_to_trust_store(cfg, toCStringArray(pem).at(0)))
-        }
-      }.toResource
+             F.delay {
+               guard_(s2n_config_add_pem_to_trust_store(cfg, toCStringArray(pem).at(0)))
+             }
+           }.toResource
 
       _ <- sendBufferSize
-        .traverse(size => F.delay(guard_(s2n_config_set_send_buffer_size(cfg, size.toUInt))))
-        .toResource
+             .traverse(size => F.delay(guard_(s2n_config_set_send_buffer_size(cfg, size.toUInt))))
+             .toResource
 
       _ <- verifyHostCallback.traverse_ { cb =>
-        F.delay(gcRoot.add(cb)) *>
-          F.delay {
-            guard_(s2n_config_set_verify_host_callback(cfg, s2nVerifyHostFn(_, _, _), toPtr(cb)))
-          }
-      }.toResource
+             F.delay(gcRoot.add(cb)) *>
+               F.delay {
+                 guard_(s2n_config_set_verify_host_callback(cfg, s2nVerifyHostFn(_, _, _), toPtr(cb)))
+               }
+           }.toResource
 
       _ <- F
-        .delay(guard_(s2n_config_disable_x509_verification(cfg)))
-        .whenA(disabledX509Verification)
-        .toResource
+             .delay(guard_(s2n_config_disable_x509_verification(cfg)))
+             .whenA(disabledX509Verification)
+             .toResource
 
       _ <- maxCertChainDepth.traverse_ { depth =>
-        F.delay(guard_(s2n_config_set_max_cert_chain_depth(cfg, depth.toUShort)))
-      }.toResource
+             F.delay(guard_(s2n_config_set_max_cert_chain_depth(cfg, depth.toUShort)))
+           }.toResource
 
       _ <- dhParams.traverse_ { pem =>
-        F.delay {
-          guard_(s2n_config_add_dhparams(cfg, toCStringArray(pem).at(0)))
-        }
-      }.toResource
+             F.delay {
+               guard_(s2n_config_add_dhparams(cfg, toCStringArray(pem).at(0)))
+             }
+           }.toResource
 
       _ <- cipherPreferences.traverse_ { version =>
-        F.delay {
-          guard_(s2n_config_set_cipher_preferences(cfg, toCStringArray(version).at(0)))
-        }
-      }.toResource
+             F.delay {
+               guard_(s2n_config_set_cipher_preferences(cfg, toCStringArray(version).at(0)))
+             }
+           }.toResource
     } yield new S2nConfig(cfg)
 
     def withCertChainAndKeysToStore(certKeyPairs: List[CertChainAndKey]): Builder =
@@ -158,14 +156,14 @@ object S2nConfig {
   // we manually schedule expensive private-key operations so we can add fairness boundaries
   private def asyncPkeyCallback[F[_]](conn: Ptr[s2n_connection], op: Ptr[s2n_async_pkey_op]): CInt =
     try {
-      val data = fromPtr[S2nConnection.ConnectionContext[F]](guard(s2n_connection_get_ctx(conn)))
+      val data       = fromPtr[S2nConnection.ConnectionContext[F]](guard(s2n_connection_get_ctx(conn)))
       import data._
       implicit val F = async
 
       val cert = guard(s2n_connection_get_selected_cert(conn))
-      val key = guard(s2n_cert_chain_and_key_get_private_key(cert))
+      val key  = guard(s2n_cert_chain_and_key_get_private_key(cert))
 
-      val task = F.cede *>
+      val task    = F.cede *>
         F.delay {
           guard_(s2n_async_pkey_op_perform(op, key))
           guard_(s2n_async_pkey_op_apply(op, conn))

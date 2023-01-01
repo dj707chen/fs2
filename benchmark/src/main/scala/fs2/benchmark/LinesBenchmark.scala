@@ -32,17 +32,17 @@ class LinesBenchmark {
   @Param(Array("0", "1", "10", "100"))
   var asciiLineSize: Int = _
   @Param(Array("4", "16", "64"))
-  var chunkSize: Int = _
+  var chunkSize:     Int = _
   val lines = 250
 
   var stringStream: Stream[IO, String] = _
   @Setup
-  def setup(): Unit =
+  def setup():      Unit               =
     stringStream =
       if (asciiLineSize == 0) Stream.empty
       else {
-        val rng = new java.util.Random(7919)
-        val line = Array.fill(asciiLineSize)((rng.nextInt(126 - 32) + 32).toByte)
+        val rng          = new java.util.Random(7919)
+        val line         = Array.fill(asciiLineSize)((rng.nextInt(126 - 32) + 32).toByte)
         val List(string) = Stream.emits(line).through(text.utf8.decode).foldMonoid.toList
 
         ((string + "\n") * lines)

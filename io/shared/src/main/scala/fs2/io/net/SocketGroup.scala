@@ -40,7 +40,7 @@ trait SocketGroup[F[_]] {
     * @param options socket options to apply to the underlying socket
     */
   def client(
-      to: SocketAddress[Host],
+      to:      SocketAddress[Host],
       options: List[SocketOption] = List.empty
   ): Resource[F, Socket[F]]
 
@@ -56,7 +56,7 @@ trait SocketGroup[F[_]] {
     */
   def server(
       address: Option[Host] = None,
-      port: Option[Port] = None,
+      port:    Option[Port] = None,
       options: List[SocketOption] = List.empty
   ): Stream[F, Socket[F]]
 
@@ -66,7 +66,7 @@ trait SocketGroup[F[_]] {
     */
   def serverResource(
       address: Option[Host] = None,
-      port: Option[Port] = None,
+      port:    Option[Port] = None,
       options: List[SocketOption] = List.empty
   ): Resource[F, (SocketAddress[IpAddress], Stream[F, Socket[F]])]
 }
@@ -76,7 +76,7 @@ private[net] object SocketGroup extends SocketGroupCompanionPlatform {
   private[net] abstract class AbstractAsyncSocketGroup[F[_]: Async] extends SocketGroup[F] {
     def server(
         address: Option[Host],
-        port: Option[Port],
+        port:    Option[Port],
         options: List[SocketOption]
     ): Stream[F, Socket[F]] =
       Stream

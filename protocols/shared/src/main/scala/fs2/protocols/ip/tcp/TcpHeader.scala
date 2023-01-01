@@ -31,16 +31,16 @@ import fs2.interop.scodec._
 import com.comcast.ip4s.Port
 
 case class TcpHeader(
-    sourcePort: Port,
+    sourcePort:      Port,
     destinationPort: Port,
-    sequenceNumber: Long,
-    ackNumber: Long,
-    dataOffset: Int,
-    flags: TcpFlags,
-    windowSize: Int,
-    checksum: Int,
-    urgentPointer: Int,
-    options: List[Long]
+    sequenceNumber:  Long,
+    ackNumber:       Long,
+    dataOffset:      Int,
+    flags:           TcpFlags,
+    windowSize:      Int,
+    checksum:        Int,
+    urgentPointer:   Int,
+    options:         List[Long]
 )
 
 object TcpHeader {

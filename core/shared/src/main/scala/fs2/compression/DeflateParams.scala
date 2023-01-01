@@ -59,29 +59,29 @@ object DeflateParams {
 
   def apply(
       bufferSize: Int = 1024 * 32,
-      header: ZLibParams.Header = ZLibParams.Header.ZLIB,
-      level: DeflateParams.Level = DeflateParams.Level.DEFAULT,
-      strategy: DeflateParams.Strategy = DeflateParams.Strategy.DEFAULT,
-      flushMode: DeflateParams.FlushMode = DeflateParams.FlushMode.DEFAULT
+      header:     ZLibParams.Header = ZLibParams.Header.ZLIB,
+      level:      DeflateParams.Level = DeflateParams.Level.DEFAULT,
+      strategy:   DeflateParams.Strategy = DeflateParams.Strategy.DEFAULT,
+      flushMode:  DeflateParams.FlushMode = DeflateParams.FlushMode.DEFAULT
   ): DeflateParams =
     DeflateParamsImpl(bufferSize, header, level, strategy, flushMode, false)
 
   def apply(
-      bufferSize: Int,
-      header: ZLibParams.Header,
-      level: DeflateParams.Level,
-      strategy: DeflateParams.Strategy,
-      flushMode: DeflateParams.FlushMode,
+      bufferSize:   Int,
+      header:       ZLibParams.Header,
+      level:        DeflateParams.Level,
+      strategy:     DeflateParams.Strategy,
+      flushMode:    DeflateParams.FlushMode,
       fhCrcEnabled: Boolean
   ): DeflateParams =
     DeflateParamsImpl(bufferSize, header, level, strategy, flushMode, fhCrcEnabled)
 
   private case class DeflateParamsImpl(
-      bufferSize: Int,
-      header: ZLibParams.Header,
-      level: DeflateParams.Level,
-      strategy: DeflateParams.Strategy,
-      flushMode: DeflateParams.FlushMode,
+      bufferSize:   Int,
+      header:       ZLibParams.Header,
+      level:        DeflateParams.Level,
+      strategy:     DeflateParams.Strategy,
+      flushMode:    DeflateParams.FlushMode,
       fhCrcEnabled: Boolean
   ) extends DeflateParams
 

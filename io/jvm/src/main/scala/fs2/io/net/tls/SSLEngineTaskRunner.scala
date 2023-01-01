@@ -34,7 +34,7 @@ private[tls] trait SSLEngineTaskRunner[F[_]] {
 
 private[tls] object SSLEngineTaskRunner {
   def apply[F[_]](
-      engine: SSLEngine
+      engine:   SSLEngine
   )(implicit F: Sync[F]): SSLEngineTaskRunner[F] =
     new SSLEngineTaskRunner[F] {
       def runDelegatedTasks: F[Unit] =

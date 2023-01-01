@@ -106,9 +106,9 @@ sealed trait Files[F[_]] extends FilesPlatform[F] {
     * @param permissions permissions to set on the created file
     */
   def createTempFile(
-      dir: Option[Path],
-      prefix: String,
-      suffix: String,
+      dir:         Option[Path],
+      prefix:      String,
+      suffix:      String,
       permissions: Option[Permissions]
   ): F[Path]
 
@@ -127,8 +127,8 @@ sealed trait Files[F[_]] extends FilesPlatform[F] {
     * @param permissions permissions to set on the created directory
     */
   def createTempDirectory(
-      dir: Option[Path],
-      prefix: String,
+      dir:         Option[Path],
+      prefix:      String,
       permissions: Option[Permissions]
   ): F[Path]
 
@@ -154,7 +154,7 @@ sealed trait Files[F[_]] extends FilesPlatform[F] {
     * Symbolic links are followed when `followLinks` is true.
     */
   def deleteRecursively(
-      path: Path,
+      path:        Path,
       followLinks: Boolean
   ): F[Unit]
 
@@ -299,11 +299,11 @@ sealed trait Files[F[_]] extends FilesPlatform[F] {
     * times set. Otherwise, the link itself has times set.
     */
   def setFileTimes(
-      path: Path,
+      path:         Path,
       lastModified: Option[FiniteDuration],
-      lastAccess: Option[FiniteDuration],
+      lastAccess:   Option[FiniteDuration],
       creationTime: Option[FiniteDuration],
-      followLinks: Boolean
+      followLinks:  Boolean
   ): F[Unit]
 
   /** Sets the POSIX permissions for the supplied path. Fails on non-POSIX file systems. */
@@ -322,9 +322,9 @@ sealed trait Files[F[_]] extends FilesPlatform[F] {
     * If an error occurs while reading from the file, the overall stream fails.
     */
   def tail(
-      path: Path,
+      path:      Path,
       chunkSize: Int = 64 * 1024,
-      offset: Long = 0L,
+      offset:    Long = 0L,
       pollDelay: FiniteDuration = 1.second
   ): Stream[F, Byte]
 
@@ -340,9 +340,9 @@ sealed trait Files[F[_]] extends FilesPlatform[F] {
     * @return a resource containing the path of the temporary file
     */
   def tempFile(
-      dir: Option[Path],
-      prefix: String,
-      suffix: String,
+      dir:         Option[Path],
+      prefix:      String,
+      suffix:      String,
       permissions: Option[Permissions]
   ): Resource[F, Path]
 
@@ -358,8 +358,8 @@ sealed trait Files[F[_]] extends FilesPlatform[F] {
     * @return a resource containing the path of the temporary directory
     */
   def tempDirectory(
-      dir: Option[Path],
-      prefix: String,
+      dir:         Option[Path],
+      prefix:      String,
       permissions: Option[Permissions]
   ): Resource[F, Path]
 
@@ -406,8 +406,8 @@ sealed trait Files[F[_]] extends FilesPlatform[F] {
     */
   def writeRotate(
       computePath: F[Path],
-      limit: Long,
-      flags: Flags
+      limit:       Long,
+      flags:       Flags
   ): Pipe[F, Byte, Nothing]
 }
 
@@ -436,9 +436,9 @@ object Files extends FilesCompanionPlatform {
       readUtf8(path).through(text.lines)
 
     def tail(
-        path: Path,
+        path:      Path,
         chunkSize: Int,
-        offset: Long,
+        offset:    Long,
         pollDelay: FiniteDuration
     ): Stream[F, Byte] =
       Stream.resource(readCursor(path, Flags.Read)).flatMap { cursor =>
@@ -446,20 +446,20 @@ object Files extends FilesCompanionPlatform {
       }
 
     def tempFile(
-        dir: Option[Path],
-        prefix: String,
-        suffix: String,
+        dir:         Option[Path],
+        prefix:      String,
+        suffix:      String,
         permissions: Option[Permissions]
     ): Resource[F, Path] =
       Resource.make(createTempFile(dir, prefix, suffix, permissions))(deleteIfExists(_).void)
 
     def tempDirectory(
-        dir: Option[Path],
-        prefix: String,
+        dir:         Option[Path],
+        prefix:      String,
         permissions: Option[Permissions]
     ): Resource[F, Path] =
-      Resource.make(createTempDirectory(dir, prefix, permissions))(deleteRecursively(_).recover {
-        case _: NoSuchFileException => ()
+      Resource.make(createTempDirectory(dir, prefix, permissions))(deleteRecursively(_).recover { case _: NoSuchFileException =>
+        ()
       })
 
     def walk(start: Path, maxDepth: Int, followLinks: Boolean): Stream[F, Path] = {
@@ -500,7 +500,7 @@ object Files extends FilesCompanionPlatform {
     }
 
     def writeAll(
-        path: Path,
+        path:  Path,
         flags: Flags
     ): Pipe[F, Byte, Nothing] =
       in =>
@@ -509,25 +509,25 @@ object Files extends FilesCompanionPlatform {
           .flatMap(_.writeAll(in).void.stream)
 
     def writeCursor(
-        path: Path,
+        path:  Path,
         flags: Flags
     ): Resource[F, WriteCursor[F]] =
       open(path, flags.addIfAbsent(Flag.Write)).flatMap { fileHandle =>
-        val size = if (flags.contains(Flag.Append)) fileHandle.size else 0L.pure[F]
+        val size   = if (flags.contains(Flag.Append)) fileHandle.size else 0L.pure[F]
         val cursor = size.map(s => WriteCursor(fileHandle, s))
         Resource.eval(cursor)
       }
 
     def writeCursorFromFileHandle(
-        file: FileHandle[F],
+        file:   FileHandle[F],
         append: Boolean
     ): F[WriteCursor[F]] =
       if (append) file.size.map(s => WriteCursor(file, s)) else WriteCursor(file, 0L).pure[F]
 
     def writeRotate(
         computePath: F[Path],
-        limit: Long,
-        flags: Flags
+        limit:       Long,
+        flags:       Flags
     ): Pipe[F, Byte, Nothing] = {
       def openNewFile: Resource[F, FileHandle[F]] =
         Resource
@@ -539,9 +539,9 @@ object Files extends FilesCompanionPlatform {
 
       def go(
           fileHotswap: Hotswap[F, FileHandle[F]],
-          cursor: WriteCursor[F],
-          acc: Long,
-          s: Stream[F, Byte]
+          cursor:      WriteCursor[F],
+          acc:         Long,
+          s:           Stream[F, Byte]
       ): Pull[F, Unit, Unit] = {
         val toWrite = (limit - acc).min(Int.MaxValue.toLong).toInt
         s.pull.unconsLimit(toWrite).flatMap {
@@ -559,7 +559,7 @@ object Files extends FilesCompanionPlatform {
               else
                 go(fileHotswap, nc, newAcc, tl)
             }
-          case None => Pull.done
+          case None           => Pull.done
         }
       }
 

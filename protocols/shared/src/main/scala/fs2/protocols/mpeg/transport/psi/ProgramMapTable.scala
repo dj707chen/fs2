@@ -31,10 +31,10 @@ import scodec.codecs._
 import Descriptor._
 
 case class ProgramMapTable(
-    programNumber: ProgramNumber,
-    version: Int,
-    current: Boolean,
-    pcrPid: Pid,
+    programNumber:          ProgramNumber,
+    version:                Int,
+    current:                Boolean,
+    pcrPid:                 Pid,
     programInfoDescriptors: List[Descriptor],
     componentStreamMapping: Map[StreamType, List[ProgramMapRecord]]
 ) extends Table {
@@ -50,7 +50,7 @@ object ProgramMapTable {
       pmt.programInfoDescriptors,
       (for {
         (st, pmrs) <- pmt.componentStreamMapping.toVector
-        pmr <- pmrs
+        pmr        <- pmrs
       } yield (st, pmr)).sortBy { case (k, v) => (k.value, v.pid.value) }
     )
 
@@ -71,7 +71,7 @@ object ProgramMapTable {
   }
 
   implicit val tableSupport: TableSupport[ProgramMapTable] = new TableSupport[ProgramMapTable] {
-    def tableId = ProgramMapSection.TableId
+    def tableId                               = ProgramMapSection.TableId
     def toTable(gs: GroupedSections[Section]) =
       gs.narrow[ProgramMapSection].toRight("Not PMT sections").flatMap { sections =>
         if (sections.tail.isEmpty) Right(fromSection(sections.head))
@@ -88,8 +88,8 @@ object ProgramMapRecord {
 }
 
 case class ProgramMapSection(
-    extension: SectionExtension,
-    pcrPid: Pid,
+    extension:              SectionExtension,
+    pcrPid:                 Pid,
     programInfoDescriptors: List[Descriptor],
     componentStreamMapping: Vector[(StreamType, ProgramMapRecord)]
 ) extends ExtendedSection {
@@ -102,8 +102,8 @@ object ProgramMapSection {
 
   private type Fragment = (Pid, List[Descriptor], Vector[(StreamType, ProgramMapRecord)])
   private val fragmentCodec: Codec[Fragment] = {
-    def pid: Codec[Pid] = reserved(3) ~> Codec[Pid]
-    def descriptors: Codec[List[Descriptor]] =
+    def pid:              Codec[Pid]              = reserved(3) ~> Codec[Pid]
+    def descriptors:      Codec[List[Descriptor]] =
       reserved(4) ~> variableSizeBytes(uint(12), list(Descriptor.codec))
     def programMapRecord: Codec[ProgramMapRecord] =
       (("pid" | pid) :: ("es_descriptors" | descriptors)).as[ProgramMapRecord]

@@ -27,7 +27,7 @@ final class SSLSession private[tls] (val raw: ByteVector) {
 
   override def equals(obj: Any): Boolean = obj match {
     case that: SSLSession => this.raw == that.raw
-    case _                => false
+    case _ => false
   }
 
   override def hashCode: Int = raw.hashCode

@@ -41,9 +41,9 @@ trait UnixSockets[F[_]] {
     * By default, the path is deleted when the server closes. To override this, pass `deleteOnClose = false`.
     */
   def server(
-      address: UnixSocketAddress,
+      address:        UnixSocketAddress,
       deleteIfExists: Boolean = false,
-      deleteOnClose: Boolean = true
+      deleteOnClose:  Boolean = true
   ): Stream[F, Socket[F]]
 }
 

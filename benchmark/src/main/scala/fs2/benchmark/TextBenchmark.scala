@@ -33,12 +33,12 @@ class TextBenchmark {
   @Param(Array("128", "1024", "4096", "16384", "131072"))
   var asciiStringSize: Int = _
 
-  var asciiBytes: Array[Byte] = _
-  var strings: Array[String] = _
+  var asciiBytes: Array[Byte]   = _
+  var strings:    Array[String] = _
 
   @Param(Array("utf-8", "utf-16", "iso-2022-kr"))
-  var charsetName: String = _
-  var charset: Charset = _
+  var charsetName: String  = _
+  var charset:     Charset = _
 
   @Setup
   def setup(): Unit = {

@@ -39,43 +39,42 @@ private[net] trait DatagramSocketGroupCompanionPlatform {
   private[net] def forAsync[F[_]: Async]: DatagramSocketGroup[F] =
     new AsyncDatagramSocketGroup[F]
 
-  private final class AsyncDatagramSocketGroup[F[_]](implicit F: Async[F])
-      extends DatagramSocketGroup[F] {
+  private final class AsyncDatagramSocketGroup[F[_]](implicit F: Async[F]) extends DatagramSocketGroup[F] {
 
     private def setSocketOptions(options: List[DatagramSocketOption])(
-        socket: facade.dgram.Socket
+        socket:                           facade.dgram.Socket
     ): F[Unit] =
       options.traverse(option => option.key.set(socket, option.value)).void
 
     override def openDatagramSocket(
-        address: Option[Host],
-        port: Option[Port],
-        options: List[DatagramSocketOption],
+        address:        Option[Host],
+        port:           Option[Port],
+        options:        List[DatagramSocketOption],
         protocolFamily: Option[ProtocolFamily]
     ): Resource[F, DatagramSocket[F]] = for {
-      sock <- F
-        .delay(facade.dgram.createSocket(protocolFamily.getOrElse("udp4")))
-        .flatTap(setSocketOptions(options))
-        .toResource
+      sock   <- F
+                  .delay(facade.dgram.createSocket(protocolFamily.getOrElse("udp4")))
+                  .flatTap(setSocketOptions(options))
+                  .toResource
       socket <- DatagramSocket.forAsync[F](sock)
-      _ <- F
-        .async_[Unit] { cb =>
-          val errorListener: js.Function1[js.Error, Unit] = { error =>
-            cb(Left(js.JavaScriptException(error)))
-          }
-          sock.once[js.Error]("error", errorListener)
-          val options = new facade.dgram.BindOptions {}
-          address.map(_.toString).foreach(options.address = _)
-          port.map(_.value).foreach(options.port = _)
-          sock.bind(
-            options,
-            { () =>
-              sock.removeListener("error", errorListener)
-              cb(Right(()))
-            }
-          )
-        }
-        .toResource
+      _      <- F
+                  .async_[Unit] { cb =>
+                    val errorListener: js.Function1[js.Error, Unit] = { error =>
+                      cb(Left(js.JavaScriptException(error)))
+                    }
+                    sock.once[js.Error]("error", errorListener)
+                    val options = new facade.dgram.BindOptions {}
+                    address.map(_.toString).foreach(options.address = _)
+                    port.map(_.value).foreach(options.port = _)
+                    sock.bind(
+                      options,
+                      { () =>
+                        sock.removeListener("error", errorListener)
+                        cb(Right(()))
+                      }
+                    )
+                  }
+                  .toResource
     } yield socket
   }
 }

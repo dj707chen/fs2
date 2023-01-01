@@ -41,62 +41,62 @@ import s2nutil._
   */
 sealed trait TLSParameters {
   val protocolPreferences: Option[List[String]]
-  val cipherPreferences: Option[String]
-  val serverName: Option[String]
-  val verifyHostCallback: Option[String => SyncIO[Boolean]]
-  val clientAuthType: Option[CertAuthType]
+  val cipherPreferences:   Option[String]
+  val serverName:          Option[String]
+  val verifyHostCallback:  Option[String => SyncIO[Boolean]]
+  val clientAuthType:      Option[CertAuthType]
 
   private[tls] def configure[F[_]](
-      conn: Ptr[s2n_connection]
+      conn:     Ptr[s2n_connection]
   )(implicit F: Sync[F]): Resource[F, Unit] =
     for {
       gcRoot <- mkGcRoot
 
       _ <- protocolPreferences.toList.flatten.traverse { protocol =>
-        F.delay {
-          guard_ {
-            s2n_connection_append_protocol_preference(
-              conn,
-              protocol.getBytes().at(0),
-              protocol.length.toByte
-            )
-          }
-        }
-      }.toResource
+             F.delay {
+               guard_ {
+                 s2n_connection_append_protocol_preference(
+                   conn,
+                   protocol.getBytes().at(0),
+                   protocol.length.toByte
+                 )
+               }
+             }
+           }.toResource
 
       _ <- cipherPreferences.traverse_ { version =>
-        F.delay {
-          guard_(s2n_connection_set_cipher_preferences(conn, toCStringArray(version).at(0)))
-        }
-      }.toResource
+             F.delay {
+               guard_(s2n_connection_set_cipher_preferences(conn, toCStringArray(version).at(0)))
+             }
+           }.toResource
 
       _ <- serverName.traverse { sn =>
-        F.delay {
-          guard_(s2n_set_server_name(conn, toCStringArray(sn).at(0)))
-        }
-      }.toResource
+             F.delay {
+               guard_(s2n_set_server_name(conn, toCStringArray(sn).at(0)))
+             }
+           }.toResource
 
       _ <- verifyHostCallback.traverse_ { cb =>
-        F.delay(gcRoot.add(cb)) *>
-          F.delay {
-            guard_(
-              s2n_connection_set_verify_host_callback(
-                conn,
-                s2nVerifyHostFn(_, _, _),
-                toPtr(cb)
-              )
-            )
-          }
-      }.toResource
+             F.delay(gcRoot.add(cb)) *>
+               F.delay {
+                 guard_(
+                   s2n_connection_set_verify_host_callback(
+                     conn,
+                     s2nVerifyHostFn(_, _, _),
+                     toPtr(cb)
+                   )
+                 )
+               }
+           }.toResource
 
       _ <- clientAuthType.traverse_ { authType =>
-        val ord = authType match {
-          case CertAuthType.None     => S2N_CERT_AUTH_NONE
-          case CertAuthType.Optional => S2N_CERT_AUTH_OPTIONAL
-          case CertAuthType.Required => S2N_CERT_AUTH_REQUIRED
-        }
-        F.delay(guard_(s2n_connection_set_client_auth_type(conn, ord.toUInt)))
-      }.toResource
+             val ord = authType match {
+               case CertAuthType.None     => S2N_CERT_AUTH_NONE
+               case CertAuthType.Optional => S2N_CERT_AUTH_OPTIONAL
+               case CertAuthType.Required => S2N_CERT_AUTH_REQUIRED
+             }
+             F.delay(guard_(s2n_connection_set_client_auth_type(conn, ord.toUInt)))
+           }.toResource
     } yield ()
 }
 
@@ -105,10 +105,10 @@ object TLSParameters {
 
   def apply(
       protocolPreferences: Option[List[String]] = None,
-      cipherPreferences: Option[String] = None,
-      serverName: Option[String] = None,
-      verifyHostCallback: Option[String => SyncIO[Boolean]] = None,
-      clientAuthType: Option[CertAuthType] = None
+      cipherPreferences:   Option[String] = None,
+      serverName:          Option[String] = None,
+      verifyHostCallback:  Option[String => SyncIO[Boolean]] = None,
+      clientAuthType:      Option[CertAuthType] = None
   ): TLSParameters = DefaultTLSParameters(
     protocolPreferences,
     cipherPreferences,
@@ -119,10 +119,10 @@ object TLSParameters {
 
   private case class DefaultTLSParameters(
       protocolPreferences: Option[List[String]],
-      cipherPreferences: Option[String],
-      serverName: Option[String],
-      verifyHostCallback: Option[String => SyncIO[Boolean]],
-      clientAuthType: Option[CertAuthType]
+      cipherPreferences:   Option[String],
+      serverName:          Option[String],
+      verifyHostCallback:  Option[String => SyncIO[Boolean]],
+      clientAuthType:      Option[CertAuthType]
   ) extends TLSParameters
 
 }

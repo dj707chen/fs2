@@ -107,9 +107,9 @@ private[internal] object ScopedResource {
     * @param leases     References (leases) of this resource
     */
   private[this] final case class State[+F[_]](
-      open: Boolean,
+      open:      Boolean,
       finalizer: Option[Resource.ExitCase => F[Either[Throwable, Unit]]],
-      leases: Int
+      leases:    Int
   ) {
     /* The `isFinished` predicate indicates that the finalizer can be run at the present state:
       which happens IF it is closed, AND there are no acquired leases pending to be released. */
@@ -161,7 +161,7 @@ private[internal] object ScopedResource {
           if (s.open)
             s.copy(leases = s.leases + 1) -> Some(TheLease)
           else
-            s -> None
+            s                             -> None
         }
 
       private[this] object TheLease extends Lease[F] {

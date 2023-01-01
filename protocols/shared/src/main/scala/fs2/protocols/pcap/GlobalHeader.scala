@@ -29,17 +29,17 @@ import scodec.{Attempt, Codec, DecodeResult, SizeBound}
 import scodec.codecs._
 
 case class GlobalHeader(
-    ordering: ByteOrdering,
+    ordering:     ByteOrdering,
     versionMajor: Int,
     versionMinor: Int,
-    thiszone: Int,
-    sigfigs: Long,
-    snaplen: Long,
-    network: LinkType
+    thiszone:     Int,
+    sigfigs:      Long,
+    snaplen:      Long,
+    network:      LinkType
 )
 
 object GlobalHeader {
-  private val MagicNumber = 0xa1b2c3d4L
+  private val MagicNumber    = 0xa1b2c3d4L
   private val MagicNumberRev = 0xd4c3b2a1L
 
   private val byteOrdering: Codec[ByteOrdering] = new Codec[ByteOrdering] {
@@ -52,11 +52,11 @@ object GlobalHeader {
 
     def decode(buf: BitVector) =
       uint32.decode(buf).flatMap {
-        case DecodeResult(MagicNumber, rest) =>
+        case DecodeResult(MagicNumber, rest)    =>
           Attempt.successful(DecodeResult(ByteOrdering.BigEndian, rest))
         case DecodeResult(MagicNumberRev, rest) =>
           Attempt.successful(DecodeResult(ByteOrdering.LittleEndian, rest))
-        case DecodeResult(other, _) =>
+        case DecodeResult(other, _)             =>
           Attempt.failure(
             Err(s"unable to detect byte ordering due to unrecognized magic number $other")
           )

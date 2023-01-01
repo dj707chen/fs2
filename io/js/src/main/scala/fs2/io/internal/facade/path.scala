@@ -67,10 +67,10 @@ package object path {
 package path {
   @js.native
   private[io] trait ParsedPath extends js.Object {
-    def dir: String = js.native
+    def dir:  String = js.native
     def root: String = js.native
     def base: String = js.native
     def name: String = js.native
-    def ext: String = js.native
+    def ext:  String = js.native
   }
 }

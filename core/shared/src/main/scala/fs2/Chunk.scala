@@ -75,9 +75,9 @@ abstract class Chunk[+O] extends Serializable with ChunkPlatform[O] with ChunkRu
     if (isEmpty) that
     else
       that match {
-        case that if that.isEmpty  => this
+        case that if that.isEmpty => this
         case that: Chunk.Queue[O2] => this +: that
-        case that                  => Chunk.Queue(this, that)
+        case that => Chunk.Queue(this, that)
       }
 
   /** More efficient version of `filter(pf.isDefinedAt).map(pf)`. */
@@ -173,8 +173,8 @@ abstract class Chunk[+O] extends Serializable with ChunkPlatform[O] with ChunkRu
   def iterator: Iterator[O] =
     new Iterator[O] {
       private[this] var i = 0
-      def hasNext = i < self.size
-      def next() = { val result = apply(i); i += 1; result }
+      def hasNext         = i < self.size
+      def next()          = { val result = apply(i); i += 1; result }
     }
 
   /** Returns the index of the first element which passes the specified predicate (i.e., `p(i) == true`)
@@ -201,7 +201,7 @@ abstract class Chunk[+O] extends Serializable with ChunkPlatform[O] with ChunkRu
     */
   def mapAccumulate[S, O2](init: S)(f: (S, O) => (S, O2)): (S, Chunk[O2]) = {
     val arr = new Array[Any](size)
-    var s = init
+    var s   = init
     foreachWithIndex { (o, i) =>
       val (s2, o2) = f(s, o)
       arr(i) = o2
@@ -228,8 +228,8 @@ abstract class Chunk[+O] extends Serializable with ChunkPlatform[O] with ChunkRu
   def reverseIterator: Iterator[O] =
     new Iterator[O] {
       private[this] var i = self.size - 1
-      def hasNext = i >= 0
-      def next() = { val result = apply(i); i -= 1; result }
+      def hasNext         = i >= 0
+      def next()          = { val result = apply(i); i -= 1; result }
     }
 
   /** Like `foldLeft` but emits each intermediate result of `f`. */
@@ -248,7 +248,7 @@ abstract class Chunk[+O] extends Serializable with ChunkPlatform[O] with ChunkRu
     val arr = new Array[Any](if (emitZero) size + 1 else size)
     var acc = z
     if (emitZero) arr(0) = acc
-    var i = if (emitZero) 1 else 0
+    var i   = if (emitZero) 1 else 0
     foreach { o =>
       acc = f(acc, o)
       arr(i) = acc
@@ -311,7 +311,7 @@ abstract class Chunk[+O] extends Serializable with ChunkPlatform[O] with ChunkRu
     this match {
       case c: Chunk.ArraySlice[_] if c.values.isInstanceOf[Array[Byte]] =>
         JByteBuffer.wrap(c.values.asInstanceOf[Array[Byte]], c.offset, c.length)
-      case c: Chunk.ByteBuffer =>
+      case c: Chunk.ByteBuffer                                          =>
         val b = c.buf.asReadOnlyBuffer
         if (c.offset == 0 && b.position() == 0 && c.size == b.limit()) b
         else {
@@ -328,7 +328,7 @@ abstract class Chunk[+O] extends Serializable with ChunkPlatform[O] with ChunkRu
     this match {
       case c: Chunk.ArraySlice[_] if c.values.isInstanceOf[Array[Char]] =>
         JCharBuffer.wrap(c.values.asInstanceOf[Array[Char]], c.offset, c.length)
-      case c: Chunk.CharBuffer =>
+      case c: Chunk.CharBuffer                                          =>
         val b = c.buf.asReadOnlyBuffer
         if (c.offset == 0 && b.position() == 0 && c.size == b.limit()) b
         else {
@@ -405,7 +405,7 @@ abstract class Chunk[+O] extends Serializable with ChunkPlatform[O] with ChunkRu
           // we don't use map2Eval since it is always
           // at most width in size.
           var flist = f(apply(end - 1)).map(_ :: Nil)
-          var idx = end - 2
+          var idx   = end - 2
           while (start <= idx) {
             flist = F.map2(f(apply(idx)), flist)(_ :: _)
             idx = idx - 1
@@ -417,12 +417,12 @@ abstract class Chunk[+O] extends Serializable with ChunkPlatform[O] with ChunkRu
 
           var fchain = Eval.defer(loop(start, start + step))
           var start0 = start + step
-          var end0 = start0 + step
+          var end0   = start0 + step
 
           while (start0 < end) {
             // Make sure these are vals, to avoid capturing mutable state
             // in the lazy context of Eval
-            val end1 = math.min(end, end0)
+            val end1   = math.min(end, end0)
             val start1 = start0
             fchain = fchain.flatMap(F.map2Eval(_, Eval.defer(loop(start1, end1)))(_.concat(_)))
             start0 = start0 + step
@@ -451,7 +451,7 @@ abstract class Chunk[+O] extends Serializable with ChunkPlatform[O] with ChunkRu
             case Some(a) => a :: Nil
             case None    => Nil
           }
-          var idx = end - 2
+          var idx   = end - 2
           while (start <= idx) {
             flist = F.map2(f(apply(idx)), flist) { (optO2, list) =>
               if (optO2.isDefined) optO2.get :: list
@@ -466,12 +466,12 @@ abstract class Chunk[+O] extends Serializable with ChunkPlatform[O] with ChunkRu
 
           var fchain = Eval.defer(loop(start, start + step))
           var start0 = start + step
-          var end0 = start0 + step
+          var end0   = start0 + step
 
           while (start0 < end) {
             // Make sure these are vals, to avoid capturing mutable state
             // in the lazy context of Eval
-            val end1 = math.min(end, end0)
+            val end1   = math.min(end, end0)
             val start1 = start0
             fchain = fchain.flatMap(F.map2Eval(_, Eval.defer(loop(start1, end1)))(_.concat(_)))
             start0 = start0 + step
@@ -491,9 +491,9 @@ abstract class Chunk[+O] extends Serializable with ChunkPlatform[O] with ChunkRu
     * an output chunk.
     */
   def zipWith[O2, O3](that: Chunk[O2])(f: (O, O2) => O3): Chunk[O3] = {
-    val sz = size.min(that.size)
+    val sz  = size.min(that.size)
     val arr = new Array[Any](sz)
-    var i = 0
+    var i   = 0
     iterator.zip(that.iterator).foreach { case (o, o2) =>
       arr(i) = f(o, o2)
       i += 1
@@ -532,20 +532,17 @@ abstract class Chunk[+O] extends Serializable with ChunkPlatform[O] with ChunkRu
     iterator.mkString("Chunk(", ", ", ")")
 }
 
-object Chunk
-    extends CollectorK[Chunk]
-    with ChunkCompanionPlatform
-    with ChunkCompanionRuntimePlatform {
+object Chunk extends CollectorK[Chunk] with ChunkCompanionPlatform with ChunkCompanionRuntimePlatform {
 
   private val empty_ : Chunk[Nothing] = new EmptyChunk
   private final class EmptyChunk extends Chunk[Nothing] {
     def size = 0
-    def apply(i: Int) = sys.error(s"Chunk.empty.apply($i)")
+    def apply(i:                       Int) = sys.error(s"Chunk.empty.apply($i)")
     def copyToArray[O2 >: Nothing](xs: Array[O2], start: Int): Unit = ()
     protected def splitAtChunk_(n: Int): (Chunk[Nothing], Chunk[Nothing]) =
       sys.error("impossible")
-    override def map[O2](f: Nothing => O2): Chunk[O2] = this
-    override def toByteVector[B](implicit ev: B =:= Byte): ByteVector = ByteVector.empty
+    override def map[O2](f:                   Nothing => O2): Chunk[O2]  = this
+    override def toByteVector[B](implicit ev: B =:= Byte):    ByteVector = ByteVector.empty
     override def toString = "empty"
   }
 
@@ -560,13 +557,13 @@ object Chunk
   /** Creates a chunk consisting of a single element. */
   def singleton[O](o: O): Chunk[O] = new Singleton(o)
   final class Singleton[O](val value: O) extends Chunk[O] {
-    def size: Int = 1
-    def apply(i: Int): O =
+    def size:                                                   Int                  = 1
+    def apply(i: Int):                                          O                    =
       if (i == 0) value else throw new IndexOutOfBoundsException()
     def copyToArray[O2 >: O](xs: Array[O2], start: Int): Unit = xs(start) = value
-    override def toByteVector[B >: O](implicit ev: B =:= Byte): ByteVector =
+    override def toByteVector[B >: O](implicit ev: B =:= Byte): ByteVector           =
       ByteVector.fromByte(value)
-    protected def splitAtChunk_(n: Int): (Chunk[O], Chunk[O]) =
+    protected def splitAtChunk_(n: Int):                        (Chunk[O], Chunk[O]) =
       sys.error("impossible")
     override def map[O2](f: O => O2): Chunk[O2] = singleton(f(value))
   }
@@ -642,9 +639,9 @@ object Chunk
   /** Creates a chunk from a `scala.collection.Iterable`. */
   def iterable[O](i: collection.Iterable[O]): Chunk[O] =
     platformIterable(i).getOrElse(i match {
-      case a: mutable.ArraySeq[o] => arraySeq[o](a).asInstanceOf[Chunk[O]]
-      case v: Vector[O]           => vector(v)
-      case l: List[O] =>
+      case a:  mutable.ArraySeq[o] => arraySeq[o](a).asInstanceOf[Chunk[O]]
+      case v:  Vector[O]           => vector(v)
+      case l:  List[O]             =>
         if (l.isEmpty) empty
         else if (l.tail.isEmpty) singleton(l.head)
         else {
@@ -652,7 +649,7 @@ object Chunk
           bldr ++= l
           array(bldr.result()).asInstanceOf[Chunk[O]]
         }
-      case ix: GIndexedSeq[O] => indexedSeq(ix)
+      case ix: GIndexedSeq[O]      => indexedSeq(ix)
       case _ =>
         if (i.isEmpty) empty
         else iterator(i.iterator)
@@ -715,7 +712,7 @@ object Chunk
     }
 
   case class ArraySlice[O](values: Array[O], offset: Int, length: Int)(implicit
-      ct: ClassTag[O]
+      ct:                          ClassTag[O]
   ) extends Chunk[O] {
     // note: we don't really need the ct implicit here as we can compute it on demand via
     // ClassTag(values.getClass.getComponentType) -- we only keep it for bincompat
@@ -726,7 +723,7 @@ object Chunk
 
     override protected def thisClassTag: ClassTag[Any] = ct.asInstanceOf[ClassTag[Any]]
 
-    def size = length
+    def size          = length
     def apply(i: Int) =
       if (i < 0 || i >= size) throw new IndexOutOfBoundsException()
       else values(offset + i)
@@ -773,14 +770,14 @@ object Chunk
   }
 
   sealed abstract class Buffer[A <: Buffer[A, B, C], B <: JBuffer, C: ClassTag](
-      buf: B,
+      buf:        B,
       val offset: Int,
-      val size: Int
+      val size:   Int
   ) extends Chunk[C] {
-    def readOnly(b: B): B
-    def buffer(b: B): A
-    def get(b: B, n: Int): C
-    def get(b: B, dest: Array[C], offset: Int, length: Int): B
+    def readOnly(b:  B): B
+    def buffer(b:    B): A
+    def get(b:       B, n:    Int): C
+    def get(b:       B, dest: Array[C], offset: Int, length: Int): B
     def duplicate(b: B): B
 
     def apply(i: Int): C =
@@ -824,7 +821,7 @@ object Chunk
 
     override def toArray[O2 >: C: ClassTag]: Array[O2] = {
       val bs = new Array[C](size)
-      val b = duplicate(buf)
+      val b  = duplicate(buf)
       (b: JBuffer).position(offset)
       get(b, bs, 0, size)
       bs.asInstanceOf[Array[O2]]
@@ -870,9 +867,9 @@ object Chunk
   }
 
   case class ByteBuffer private (
-      buf: JByteBuffer,
+      buf:                 JByteBuffer,
       override val offset: Int,
-      override val size: Int
+      override val size:   Int
   ) extends Buffer[ByteBuffer, JByteBuffer, Byte](buf, offset, size) {
     def readOnly(b: JByteBuffer): JByteBuffer =
       b.asReadOnlyBuffer()
@@ -954,7 +951,7 @@ object Chunk
     if (totalSize == 0)
       Chunk.empty
     else {
-      val arr = new Array[A](totalSize)
+      val arr    = new Array[A](totalSize)
       var offset = 0
       chunks.foreach { c =>
         if (!c.isEmpty) {
@@ -973,7 +970,7 @@ object Chunk
     */
   def queueFirstN[A](
       queue: collection.immutable.Queue[A],
-      n: Int
+      n:     Int
   ): (Chunk[A], collection.immutable.Queue[A]) =
     if (n <= 0) (Chunk.empty, queue)
     else if (n == 1) {
@@ -983,8 +980,8 @@ object Chunk
       val bldr = makeArrayBuilder[Any]
       // Note: can't use sizeHint here as `n` might be huge (e.g. Int.MaxValue)
       // and calling n.min(queue.size) has linear time complexity in queue size
-      var cur = queue
-      var rem = n
+      var cur  = queue
+      var rem  = n
       while (rem > 0 && cur.nonEmpty) {
         val (hd, tl) = cur.dequeue
         bldr += hd
@@ -1002,10 +999,10 @@ object Chunk
   final class Queue[+O] private (val chunks: SQueue[Chunk[O]], val size: Int) extends Chunk[O] {
 
     private[this] lazy val accumulatedLengths: (Array[Int], Array[Chunk[O]]) = {
-      val lens = new Array[Int](chunks.size)
-      val arr = new Array[Chunk[O]](chunks.size)
+      val lens   = new Array[Int](chunks.size)
+      val arr    = new Array[Chunk[O]](chunks.size)
       var accLen = 0
-      var i = 0
+      var i      = 0
       chunks.foreach { c =>
         accLen += c.size
         lens(i) = accLen
@@ -1051,13 +1048,13 @@ object Chunk
       else if (i == size - 1) chunks.last.last.get
       else {
         val (lengths, chunks) = accumulatedLengths
-        val j = java.util.Arrays.binarySearch(lengths, i)
+        val j                 = java.util.Arrays.binarySearch(lengths, i)
         if (j >= 0) {
           // The requested index is exactly equal to an accumulated length so the head of the next chunk is the value to return
           chunks(j + 1)(0)
         } else {
           // The requested index is not an exact match but located in the chunk at the returned insertion point
-          val k = -(j + 1)
+          val k            = -(j + 1)
           val accLenBefore = if (k == 0) 0 else lengths(k - 1)
           chunks(k)(i - accLenBefore)
         }
@@ -1086,7 +1083,7 @@ object Chunk
           if (toTake <= 0) new Queue(acc, n)
           else {
             val (next, tail) = rem.dequeue
-            val nextSize = next.size
+            val nextSize     = next.size
             if (nextSize <= toTake) go(acc :+ next, tail, toTake - nextSize)
             else new Queue(acc :+ next.take(toTake), n)
           }
@@ -1101,7 +1098,7 @@ object Chunk
         def go(rem: SQueue[Chunk[O]], toDrop: Int): Queue[O] =
           if (toDrop <= 0) new Queue(rem, size - n)
           else {
-            val next = rem.head
+            val next     = rem.head
             val nextSize = next.size
             if (nextSize <= toDrop) go(rem.tail, toDrop - nextSize)
             else new Queue(next.drop(toDrop) +: rem.tail, size - n)
@@ -1114,7 +1111,7 @@ object Chunk
       def go(taken: SQueue[Chunk[O]], rem: SQueue[Chunk[O]], toDrop: Int): (Queue[O], Queue[O]) =
         if (toDrop <= 0) (new Queue(taken, n), new Queue(rem, size - n))
         else {
-          val next = rem.head
+          val next     = rem.head
           val nextSize = next.size
           if (nextSize <= toDrop) go(taken :+ next, rem.tail, toDrop - nextSize)
           else {
@@ -1151,15 +1148,15 @@ object Chunk
       toIndexedChunk.traverse(f)
 
     override def traverseFilter[F[_], O2](f: O => F[Option[O2]])(implicit
-        F: Applicative[F]
+        F:                                   Applicative[F]
     ): F[Chunk[O2]] =
       toIndexedChunk.traverseFilter(f)
   }
 
   object Queue {
     private val empty_ = new Queue(collection.immutable.Queue.empty, 0)
-    def empty[O]: Queue[O] = empty_.asInstanceOf[Queue[O]]
-    def singleton[O](c: Chunk[O]): Queue[O] =
+    def empty[O]:                    Queue[O] = empty_.asInstanceOf[Queue[O]]
+    def singleton[O](c: Chunk[O]):   Queue[O] =
       if (c.isEmpty) empty else new Queue(collection.immutable.Queue(c), c.size)
     def apply[O](chunks: Chunk[O]*): Queue[O] =
       chunks.foldLeft(empty[O])(_ :+ _)
@@ -1190,24 +1187,23 @@ object Chunk
 
   /** `Traverse`, `Monad`, `Alternative`, and `TraverseFilter` instance for `Chunk`.
     */
-  implicit val instance
-      : Traverse[Chunk] with Monad[Chunk] with Alternative[Chunk] with TraverseFilter[Chunk] =
+  implicit val instance: Traverse[Chunk] with Monad[Chunk] with Alternative[Chunk] with TraverseFilter[Chunk] =
     new Traverse[Chunk] with Monad[Chunk] with Alternative[Chunk] with TraverseFilter[Chunk] {
       override def foldLeft[A, B](fa: Chunk[A], b: B)(f: (B, A) => B): B = fa.foldLeft(b)(f)
       override def foldRight[A, B](fa: Chunk[A], b: Eval[B])(
-          f: (A, Eval[B]) => Eval[B]
+          f:                           (A, Eval[B]) => Eval[B]
       ): Eval[B] = {
         def go(i: Int): Eval[B] =
           if (i < fa.size) f(fa(i), Eval.defer(go(i + 1)))
           else b
         go(0)
       }
-      override def size[A](fa: Chunk[A]): Long = fa.size.toLong
-      override def toList[A](fa: Chunk[A]): List[A] = fa.toList
-      override def isEmpty[A](fa: Chunk[A]): Boolean = fa.isEmpty
+      override def size[A](fa:        Chunk[A]): Long = fa.size.toLong
+      override def toList[A](fa:      Chunk[A]): List[A] = fa.toList
+      override def isEmpty[A](fa:     Chunk[A]): Boolean = fa.isEmpty
       override def empty[A]: Chunk[A] = Chunk.empty
-      override def pure[A](a: A): Chunk[A] = Chunk.singleton(a)
-      override def map[A, B](fa: Chunk[A])(f: A => B): Chunk[B] = fa.map(f)
+      override def pure[A](a:        A): Chunk[A] = Chunk.singleton(a)
+      override def map[A, B](fa:     Chunk[A])(f: A => B):        Chunk[B] = fa.map(f)
       override def flatMap[A, B](fa: Chunk[A])(f: A => Chunk[B]): Chunk[B] = fa.flatMap(f)
       override def flatten[A](ffa: Chunk[Chunk[A]]): Chunk[A] =
         if (ffa.isEmpty) Chunk.empty
@@ -1220,30 +1216,30 @@ object Chunk
 
       override def traverse_[F[_], A, B](
           fa: Chunk[A]
-      )(f: A => F[B])(implicit F: Applicative[F]): F[Unit] =
+      )(f:    A => F[B])(implicit F: Applicative[F]): F[Unit] =
         fa.size match {
           case 0 => F.unit
           case 1 => f(fa(0)).void
           case _ => super.traverse_(fa)(f)
         }
 
-      override def tailRecM[A, B](a: A)(f: A => Chunk[Either[A, B]]): Chunk[B] = {
+      override def tailRecM[A, B](a: A)(f: A => Chunk[Either[A, B]]): Chunk[B]        = {
         // Based on the implementation of tailRecM for Vector from cats, licensed under MIT
-        val buf = makeArrayBuilder[Any]
+        val buf   = makeArrayBuilder[Any]
         var state = List(f(a).iterator)
         @tailrec
         def go(): Unit =
           state match {
-            case Nil => ()
+            case Nil                    => ()
             case h :: tail if h.isEmpty =>
               state = tail
               go()
-            case h :: tail =>
+            case h :: tail              =>
               h.next() match {
                 case Right(b) =>
                   buf += b
                   go()
-                case Left(a) =>
+                case Left(a)  =>
                   state = (f(a).iterator) :: h :: tail
                   go()
               }
@@ -1251,15 +1247,15 @@ object Chunk
         go()
         Chunk.array(buf.result()).asInstanceOf[Chunk[B]]
       }
-      override def combineK[A](x: Chunk[A], y: Chunk[A]): Chunk[A] =
+      override def combineK[A](x: Chunk[A], y: Chunk[A]):             Chunk[A]        =
         x ++ y
-      override def traverse: Traverse[Chunk] = this
+      override def traverse:                                          Traverse[Chunk] = this
       override def traverse[F[_], A, B](
           fa: Chunk[A]
-      )(f: A => F[B])(implicit F: Applicative[F]): F[Chunk[B]] = fa.traverse(f)
+      )(f:    A => F[B])(implicit F: Applicative[F]): F[Chunk[B]] = fa.traverse(f)
       override def traverseFilter[F[_], A, B](
           fa: Chunk[A]
-      )(f: A => F[Option[B]])(implicit F: Applicative[F]): F[Chunk[B]] = fa.traverseFilter(f)
+      )(f:    A => F[Option[B]])(implicit F: Applicative[F]): F[Chunk[B]] = fa.traverseFilter(f)
       override def mapFilter[A, B](fa: Chunk[A])(f: A => Option[B]): Chunk[B] = fa.mapFilter(f)
     }
 }

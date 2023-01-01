@@ -29,18 +29,18 @@ final class Flag private (private[file] val option: OpenOption) extends AnyVal
 object Flag extends FlagCompanionApi {
   def fromOpenOption(option: OpenOption): Flag = new Flag(option)
 
-  val Read = fromOpenOption(StandardOpenOption.READ)
-  val Write = fromOpenOption(StandardOpenOption.WRITE)
+  val Read   = fromOpenOption(StandardOpenOption.READ)
+  val Write  = fromOpenOption(StandardOpenOption.WRITE)
   val Append = fromOpenOption(StandardOpenOption.APPEND)
 
-  val Truncate = fromOpenOption(StandardOpenOption.TRUNCATE_EXISTING)
-  val Create = fromOpenOption(StandardOpenOption.CREATE)
+  val Truncate  = fromOpenOption(StandardOpenOption.TRUNCATE_EXISTING)
+  val Create    = fromOpenOption(StandardOpenOption.CREATE)
   val CreateNew = fromOpenOption(StandardOpenOption.CREATE_NEW)
 
   val DeleteOnClose = fromOpenOption(StandardOpenOption.DELETE_ON_CLOSE)
-  val Sparse = fromOpenOption(StandardOpenOption.SPARSE)
-  val Sync = fromOpenOption(StandardOpenOption.SYNC)
-  val Dsync = fromOpenOption(StandardOpenOption.DSYNC)
+  val Sparse        = fromOpenOption(StandardOpenOption.SPARSE)
+  val Sync          = fromOpenOption(StandardOpenOption.SYNC)
+  val Dsync         = fromOpenOption(StandardOpenOption.DSYNC)
 }
 
 private[file] trait FlagsCompanionPlatform {

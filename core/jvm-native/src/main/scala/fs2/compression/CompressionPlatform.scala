@@ -63,12 +63,12 @@ private[compression] trait CompressionPlatform[F[_]] { self: Compression[F] =>
     * @param comment          optional file comment
     */
   def gzip(
-      bufferSize: Int = 1024 * 32,
-      deflateLevel: Option[Int] = None,
-      deflateStrategy: Option[Int] = None,
+      bufferSize:       Int = 1024 * 32,
+      deflateLevel:     Option[Int] = None,
+      deflateStrategy:  Option[Int] = None,
       modificationTime: Option[Instant] = None,
-      fileName: Option[String] = None,
-      comment: Option[String] = None
+      fileName:         Option[String] = None,
+      comment:          Option[String] = None
   ): Pipe[F, Byte, Byte] =
     gzip(
       fileName = fileName,
@@ -109,10 +109,10 @@ private[compression] trait CompressionPlatform[F[_]] { self: Compression[F] =>
     * @param deflateParams    see [[compression.DeflateParams]]
     */
   def gzip(
-      fileName: Option[String],
+      fileName:         Option[String],
       modificationTime: Option[Instant],
-      comment: Option[String],
-      deflateParams: DeflateParams
+      comment:          Option[String],
+      deflateParams:    DeflateParams
   ): Pipe[F, Byte, Byte]
 
 }
@@ -140,8 +140,8 @@ private[compression] trait CompressionCompanionPlatform {
 
       private def _deflate(
           deflateParams: DeflateParams,
-          deflater: Deflater,
-          crc32: Option[CRC32]
+          deflater:      Deflater,
+          crc32:         Option[CRC32]
       ): Pipe[F, Byte, Byte] =
         in =>
           Stream.suspend {
@@ -150,12 +150,12 @@ private[compression] trait CompressionCompanionPlatform {
           }
 
       private def _deflate_chunk(
-          deflateParams: DeflateParams,
-          deflater: Deflater,
-          crc32: Option[CRC32],
-          chunk: Chunk[Byte],
+          deflateParams:  DeflateParams,
+          deflater:       Deflater,
+          crc32:          Option[CRC32],
+          chunk:          Chunk[Byte],
           deflatedBuffer: Array[Byte],
-          isFinalChunk: Boolean
+          isFinalChunk:   Boolean
       ): Pull[F, Byte, Unit] = {
         val bytesChunk = chunk.toArraySlice
         deflater.setInput(
@@ -192,9 +192,9 @@ private[compression] trait CompressionCompanionPlatform {
       }
 
       private def _deflate_stream(
-          deflateParams: DeflateParams,
-          deflater: Deflater,
-          crc32: Option[CRC32],
+          deflateParams:  DeflateParams,
+          deflater:       Deflater,
+          crc32:          Option[CRC32],
           deflatedBuffer: Array[Byte]
       ): Stream[F, Byte] => Pull[F, Byte, Unit] =
         _.pull.uncons.flatMap {
@@ -208,7 +208,7 @@ private[compression] trait CompressionCompanionPlatform {
               isFinalChunk = false
             ) >>
               _deflate_stream(deflateParams, deflater, crc32, deflatedBuffer)(inflatedStream)
-          case None =>
+          case None                                  =>
             _deflate_chunk(
               deflateParams,
               deflater,
@@ -235,8 +235,8 @@ private[compression] trait CompressionCompanionPlatform {
 
       private def _inflate(
           inflateParams: InflateParams,
-          inflater: Inflater,
-          crc32: Option[CRC32]
+          inflater:      Inflater,
+          crc32:         Option[CRC32]
       ): Stream[F, Byte] => Pull[F, Byte, Unit] =
         in =>
           Pull.suspend {
@@ -254,15 +254,15 @@ private[compression] trait CompressionCompanionPlatform {
                   crc32,
                   inflatedBuffer
                 )(deflatedStream)
-              case None =>
+              case None                                  =>
                 Pull.done
             }
           }
 
       private def _inflate_chunk(
-          inflater: Inflater,
-          crc32: Option[CRC32],
-          chunk: Chunk[Byte],
+          inflater:       Inflater,
+          crc32:          Option[CRC32],
+          chunk:          Chunk[Byte],
           inflatedBuffer: Array[Byte]
       ): Pull[F, Byte, Unit] = {
         val bytesChunk = chunk.toArraySlice
@@ -282,7 +282,7 @@ private[compression] trait CompressionCompanionPlatform {
 
         def pull(): Pull[F, Byte, Unit] =
           runInflate() match {
-            case inflatedBytes if inflatedBytes <= -2 =>
+            case inflatedBytes if inflatedBytes <= -2                   =>
               inflater.getRemaining match {
                 case bytesRemaining if bytesRemaining > 0 =>
                   Pull.output(
@@ -292,7 +292,7 @@ private[compression] trait CompressionCompanionPlatform {
                       bytesRemaining
                     )
                   )
-                case _ =>
+                case _                                    =>
                   Pull.done
               }
             case inflatedBytes if inflatedBytes == -1 =>
@@ -309,11 +309,11 @@ private[compression] trait CompressionCompanionPlatform {
                           bytesRemaining
                         )
                       )
-                  case _ =>
+                  case _                                    =>
                     Pull.output(copyAsChunkBytes(inflatedBuffer, inflatedBytes))
                 }
               else Pull.output(copyAsChunkBytes(inflatedBuffer, inflatedBytes))
-            case inflatedBytes =>
+            case inflatedBytes                                          =>
               Pull.output(copyAsChunkBytes(inflatedBuffer, inflatedBytes)) >> pull()
           }
 
@@ -321,9 +321,9 @@ private[compression] trait CompressionCompanionPlatform {
       }
 
       private def _inflate_stream(
-          inflateParams: InflateParams,
-          inflater: Inflater,
-          crc32: Option[CRC32],
+          inflateParams:  InflateParams,
+          inflater:       Inflater,
+          crc32:          Option[CRC32],
           inflatedBuffer: Array[Byte]
       ): Stream[F, Byte] => Pull[F, Byte, Unit] =
         _.pull.uncons.flatMap {
@@ -339,7 +339,7 @@ private[compression] trait CompressionCompanionPlatform {
               crc32,
               inflatedBuffer
             )(deflatedStream)
-          case None =>
+          case None                                  =>
             if (!inflater.finished)
               Pull.raiseError[F](new DataFormatException("Insufficient data"))
             else
@@ -347,10 +347,10 @@ private[compression] trait CompressionCompanionPlatform {
         }
 
       def gzip(
-          fileName: Option[String],
+          fileName:         Option[String],
           modificationTime: Option[Instant],
-          comment: Option[String],
-          deflateParams: DeflateParams
+          comment:          Option[String],
+          deflateParams:    DeflateParams
       ): Pipe[F, Byte, Byte] =
         stream =>
           deflateParams match {
@@ -387,16 +387,16 @@ private[compression] trait CompressionCompanionPlatform {
           }
 
       private def _gzip_header(
-          fileName: Option[String],
+          fileName:         Option[String],
           modificationTime: Option[Instant],
-          comment: Option[String],
-          deflateLevel: Int,
-          fhCrcEnabled: Boolean
+          comment:          Option[String],
+          deflateLevel:     Int,
+          fhCrcEnabled:     Boolean
       ): Stream[F, Byte] = {
         // See RFC 1952: https://www.ietf.org/rfc/rfc1952.txt
         val secondsSince197001010000: Long =
           modificationTime.map(_.getEpochSecond).getOrElse(0)
-        val header = Array[Byte](
+        val header          = Array[Byte](
           gzipMagicFirstByte, // ID1: Identification 1
           gzipMagicSecondByte, // ID2: Identification 2
           gzipCompressionMethod.DEFLATE, // CM: Compression Method
@@ -414,7 +414,7 @@ private[compression] trait CompressionCompanionPlatform {
           },
           gzipOperatingSystem.THIS
         ) // OS: Operating System
-        val crc32 = new CRC32()
+        val crc32           = new CRC32()
         crc32.update(header)
         val fileNameEncoded = fileName.map { string =>
           val bytes = string.replaceAll("\u0000", "_").getBytes(StandardCharsets.ISO_8859_1)
@@ -422,13 +422,13 @@ private[compression] trait CompressionCompanionPlatform {
           crc32.update(zeroByte.toInt)
           bytes
         }
-        val commentEncoded = comment.map { string =>
+        val commentEncoded  = comment.map { string =>
           val bytes = string.replaceAll("\u0000", " ").getBytes(StandardCharsets.ISO_8859_1)
           crc32.update(bytes)
           crc32.update(zeroByte.toInt)
           bytes
         }
-        val crc32Value = crc32.getValue
+        val crc32Value      = crc32.getValue
 
         val crc16 =
           if (fhCrcEnabled)
@@ -452,8 +452,8 @@ private[compression] trait CompressionCompanionPlatform {
       private def _gzip_trailer(deflater: Deflater, crc32: CRC32): Stream[F, Byte] = {
         // See RFC 1952: https://www.ietf.org/rfc/rfc1952.txt
         val crc32Value = crc32.getValue
-        val bytesIn = deflater.getTotalIn
-        val trailer = Array[Byte](
+        val bytesIn    = deflater.getTotalIn
+        val trailer    = Array[Byte](
           (crc32Value & 0xff).toByte, // CRC-32: Cyclic Redundancy Check
           ((crc32Value >> 8) & 0xff).toByte,
           ((crc32Value >> 16) & 0xff).toByte,
@@ -486,7 +486,7 @@ private[compression] trait CompressionCompanionPlatform {
                             contentCrc32,
                             inflater
                           )
-                        case None =>
+                        case None                                                     =>
                           Pull.output1(GunzipResult(Stream.raiseError(new EOFException())))
                       }
                   },
@@ -502,12 +502,12 @@ private[compression] trait CompressionCompanionPlatform {
           }
 
       private def _gunzip_matchMandatoryHeader(
-          inflateParams: InflateParams,
-          mandatoryHeaderChunk: Chunk[Byte],
+          inflateParams:              InflateParams,
+          mandatoryHeaderChunk:       Chunk[Byte],
           streamAfterMandatoryHeader: Stream[F, Byte],
-          headerCrc32: CRC32,
-          contentCrc32: CRC32,
-          inflater: Inflater
+          headerCrc32:                CRC32,
+          contentCrc32:               CRC32,
+          inflater:                   Inflater
       ) = {
         val mandatoryHeaderSlice = mandatoryHeaderChunk.toArraySlice
         val mandatoryHeaderBytes =
@@ -590,7 +590,7 @@ private[compression] trait CompressionCompanionPlatform {
               .flatMap {
                 case Some((gunzipResult, _)) =>
                   Pull.output1(gunzipResult)
-                case None =>
+                case None                    =>
                   Pull.output1(GunzipResult(Stream.raiseError(new EOFException())))
               }
           case (
@@ -619,13 +619,13 @@ private[compression] trait CompressionCompanionPlatform {
       }
 
       private def _gunzip_readOptionalHeader(
-          inflateParams: InflateParams,
+          inflateParams:              InflateParams,
           streamAfterMandatoryHeader: Stream[F, Byte],
-          flags: Byte,
-          headerCrc32: CRC32,
-          contentCrc32: CRC32,
-          secondsSince197001010000: Long,
-          inflater: Inflater
+          flags:                      Byte,
+          headerCrc32:                CRC32,
+          contentCrc32:               CRC32,
+          secondsSince197001010000:   Long,
+          inflater:                   Inflater
       ): Stream[F, GunzipResult[F]] =
         streamAfterMandatoryHeader
           .through(_gunzip_skipOptionalExtraField(gzipFlag.fextra(flags), headerCrc32))
@@ -678,7 +678,7 @@ private[compression] trait CompressionCompanionPlatform {
 
       private def _gunzip_skipOptionalExtraField(
           isPresent: Boolean,
-          crc32: CRC32
+          crc32:     CRC32
       ): Pipe[F, Byte, Byte] =
         stream =>
           if (isPresent)
@@ -703,7 +703,7 @@ private[compression] trait CompressionCompanionPlatform {
                             val fieldBytes = optionalExtraFieldChunk.toArraySlice
                             crc32.update(fieldBytes.values, fieldBytes.offset, fieldBytes.length)
                             Pull.output1(streamAfterOptionalExtraField)
-                          case None =>
+                          case None                                                           =>
                             Pull.raiseError(
                               new ZipException("Failed to read optional extra field header")
                             )
@@ -713,7 +713,7 @@ private[compression] trait CompressionCompanionPlatform {
                         new ZipException("Failed to read optional extra field header length")
                       )
                   }
-                case None =>
+                case None                                                                       =>
                   Pull.raiseError(new EOFException())
               }
               .stream
@@ -721,9 +721,9 @@ private[compression] trait CompressionCompanionPlatform {
           else stream
 
       private def _gunzip_readOptionalStringField(
-          isPresent: Boolean,
-          crc32: CRC32,
-          fieldName: String,
+          isPresent:           Boolean,
+          crc32:               CRC32,
+          fieldName:           String,
           fieldBytesSoftLimit: Int
       ): Stream[F, Byte] => Stream[F, (Option[String], Stream[F, Byte])] =
         stream =>
@@ -757,7 +757,7 @@ private[compression] trait CompressionCompanionPlatform {
                         .drop(1)
                     )
                   )
-                case None =>
+                case None                =>
                   Pull.output1(
                     (
                       Option.empty[String],
@@ -770,7 +770,7 @@ private[compression] trait CompressionCompanionPlatform {
 
       private def _gunzip_validateHeader(
           isPresent: Boolean,
-          crc32: CRC32
+          crc32:     CRC32
       ): Pipe[F, Byte, Byte] =
         stream =>
           if (isPresent)
@@ -779,12 +779,12 @@ private[compression] trait CompressionCompanionPlatform {
               .flatMap {
                 case Some((headerCrcChunk, streamAfterHeaderCrc)) =>
                   val expectedHeaderCrc16 = unsignedToInt(headerCrcChunk(0), headerCrcChunk(1))
-                  val actualHeaderCrc16 = crc32.getValue & 0xffff
+                  val actualHeaderCrc16   = crc32.getValue & 0xffff
                   if (expectedHeaderCrc16 != actualHeaderCrc16)
                     Pull.raiseError(new ZipException("Header failed CRC validation"))
                   else
                     Pull.output1(streamAfterHeaderCrc)
-                case None =>
+                case None                                         =>
                   Pull.raiseError(new ZipException("Failed to read header CRC"))
               }
               .stream
@@ -792,7 +792,7 @@ private[compression] trait CompressionCompanionPlatform {
           else stream
 
       private def _gunzip_validateTrailer(
-          crc32: CRC32,
+          crc32:    CRC32,
           inflater: Inflater
       ): Pipe[F, Byte, Byte] =
         stream =>
@@ -802,10 +802,10 @@ private[compression] trait CompressionCompanionPlatform {
               if (trailerChunk.size == gzipTrailerBytes) {
                 val expectedInputCrc32 =
                   unsignedToLong(trailerChunk(0), trailerChunk(1), trailerChunk(2), trailerChunk(3))
-                val actualInputCrc32 = crc32.getValue
-                val expectedInputSize =
+                val actualInputCrc32   = crc32.getValue
+                val expectedInputSize  =
                   unsignedToLong(trailerChunk(4), trailerChunk(5), trailerChunk(6), trailerChunk(7))
-                val actualInputSize = inflater.getBytesWritten & 0xffffffffL
+                val actualInputSize    = inflater.getBytesWritten & 0xffffffffL
                 if (expectedInputCrc32 != actualInputCrc32)
                   Pull.raiseError(new ZipException("Content failed CRC validation"))
                 else if (expectedInputSize != actualInputSize)
@@ -828,7 +828,7 @@ private[compression] trait CompressionCompanionPlatform {
                       Pull.output(last) >> Pull.output(next) >>
                         streamUntilTrailer(Chunk.empty[Byte])(rest)
                     else Pull.output(next) >> streamUntilTrailer(Chunk.empty[Byte])(rest)
-                  case None =>
+                  case None               =>
                     val preTrailerBytes = last.size - gzipTrailerBytes
                     if (preTrailerBytes > 0)
                       Pull.output(last.take(preTrailerBytes)) >>
@@ -851,19 +851,19 @@ private[compression] trait CompressionCompanionPlatform {
       ): Stream[F, O] => Pull[F, Nothing, Option[(Chunk[O], Stream[F, O])]] =
         stream => {
           def go(
-              acc: List[Chunk[O]],
+              acc:  List[Chunk[O]],
               rest: Stream[F, O],
               size: Int = 0
           ): Pull[F, Nothing, Option[(Chunk[O], Stream[F, O])]] =
             rest.pull.uncons.flatMap {
-              case None =>
+              case None           =>
                 Pull.pure(None)
               case Some((hd, tl)) =>
                 hd.indexWhere(predicate) match {
                   case Some(i) =>
                     val (pfx, sfx) = hd.splitAt(i)
                     Pull.pure(Some(Chunk.concat((pfx :: acc).reverse) -> tl.cons(sfx)))
-                  case None =>
+                  case None    =>
                     val newSize = size + hd.size
                     if (newSize < softLimit) go(hd :: acc, tl, newSize)
                     else Pull.pure(Some(Chunk.concat((hd :: acc).reverse) -> tl))
@@ -874,28 +874,28 @@ private[compression] trait CompressionCompanionPlatform {
         }
 
       private val gzipHeaderBytes = 10
-      private val gzipMagicFirstByte: Byte = 0x1f.toByte
+      private val gzipMagicFirstByte:  Byte = 0x1f.toByte
       private val gzipMagicSecondByte: Byte = 0x8b.toByte
       private object gzipCompressionMethod {
         val DEFLATE: Byte = Deflater.DEFLATED.toByte
       }
       private object gzipFlag {
         def apply(flags: Byte, flag: Byte): Boolean = (flags & flag) == flag
-        def apply(flags: Byte, flag: Int): Boolean = (flags & flag) == flag
+        def apply(flags: Byte, flag: Int):  Boolean = (flags & flag) == flag
 
-        def ftext(flags: Byte): Boolean = apply(flags, FTEXT)
-        def fhcrc(flags: Byte): Boolean = apply(flags, FHCRC)
-        def fextra(flags: Byte): Boolean = apply(flags, FEXTRA)
-        def fname(flags: Byte): Boolean = apply(flags, FNAME)
-        def fcomment(flags: Byte): Boolean = apply(flags, FCOMMENT)
+        def ftext(flags:     Byte): Boolean = apply(flags, FTEXT)
+        def fhcrc(flags:     Byte): Boolean = apply(flags, FHCRC)
+        def fextra(flags:    Byte): Boolean = apply(flags, FEXTRA)
+        def fname(flags:     Byte): Boolean = apply(flags, FNAME)
+        def fcomment(flags:  Byte): Boolean = apply(flags, FCOMMENT)
         def reserved5(flags: Byte): Boolean = apply(flags, RESERVED_BIT_5)
         def reserved6(flags: Byte): Boolean = apply(flags, RESERVED_BIT_6)
         def reserved7(flags: Byte): Boolean = apply(flags, RESERVED_BIT_7)
 
-        val FTEXT: Byte = 1
-        val FHCRC: Byte = 2
-        val FEXTRA: Byte = 4
-        val FNAME: Byte = 8
+        val FTEXT:    Byte = 1
+        val FHCRC:    Byte = 2
+        val FEXTRA:   Byte = 4
+        val FNAME:    Byte = 8
         val FCOMMENT: Byte = 16
         val RESERVED_BIT_5 = 32
         val RESERVED_BIT_6 = 64
@@ -903,26 +903,26 @@ private[compression] trait CompressionCompanionPlatform {
       }
       private object gzipExtraFlag {
         val DEFLATE_MAX_COMPRESSION_SLOWEST_ALGO: Byte = 2
-        val DEFLATE_FASTEST_ALGO: Byte = 4
+        val DEFLATE_FASTEST_ALGO:                 Byte = 4
       }
       private val gzipOptionalExtraFieldLengthBytes = 2
       private val gzipHeaderCrcBytes = 2
       private object gzipOperatingSystem {
-        val FAT_FILESYSTEM: Byte = 0
-        val AMIGA: Byte = 1
-        val VMS: Byte = 2
-        val UNIX: Byte = 3
-        val VM_CMS: Byte = 4
-        val ATARI_TOS: Byte = 5
+        val FAT_FILESYSTEM:  Byte = 0
+        val AMIGA:           Byte = 1
+        val VMS:             Byte = 2
+        val UNIX:            Byte = 3
+        val VM_CMS:          Byte = 4
+        val ATARI_TOS:       Byte = 5
         val HPFS_FILESYSTEM: Byte = 6
-        val MACINTOSH: Byte = 7
-        val Z_SYSTEM: Byte = 8
-        val CP_M: Byte = 9
-        val TOPS_20: Byte = 10
+        val MACINTOSH:       Byte = 7
+        val Z_SYSTEM:        Byte = 8
+        val CP_M:            Byte = 9
+        val TOPS_20:         Byte = 10
         val NTFS_FILESYSTEM: Byte = 11
-        val QDOS: Byte = 12
-        val ACORN_RISCOS: Byte = 13
-        val UNKNOWN: Byte = 255.toByte
+        val QDOS:            Byte = 12
+        val ACORN_RISCOS:    Byte = 13
+        val UNKNOWN:         Byte = 255.toByte
 
         val THIS: Byte = System.getProperty("os.name").toLowerCase() match {
           case name if name.indexOf("nux") > 0  => UNIX
@@ -933,13 +933,13 @@ private[compression] trait CompressionCompanionPlatform {
           case _                                => UNKNOWN
         }
       }
-      private val gzipInputCrcBytes = 4
+      private val gzipInputCrcBytes  = 4
       private val gzipInputSizeBytes = 4
-      private val gzipTrailerBytes = gzipInputCrcBytes + gzipInputSizeBytes
+      private val gzipTrailerBytes   = gzipInputCrcBytes + gzipInputSizeBytes
 
       private val zeroByte: Byte = 0
 
-      private val fileNameBytesSoftLimit =
+      private val fileNameBytesSoftLimit    =
         1024 // A limit is good practice. Actual limit will be max(chunk.size, soft limit). Typical maximum file size is 255 characters.
       private val fileCommentBytesSoftLimit =
         1024 * 1024 // A limit is good practice. Actual limit will be max(chunk.size, soft limit). 1 MiB feels reasonable for a comment.

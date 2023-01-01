@@ -40,13 +40,13 @@ import java.nio.file.{FileSystem, FileSystems, Path => JPath, Paths}
 final class Path private (val toNioPath: JPath) extends PathApi {
 
   def /(name: String): Path = Path(Paths.get(toString, name)).normalize
-  def /(path: Path): Path = this / path.toString
+  def /(path: Path):   Path = this / path.toString
 
   def resolve(name: String): Path = Path(toNioPath.resolve(name)).normalize
-  def resolve(path: Path): Path = Path(toNioPath.resolve(path.toNioPath)).normalize
+  def resolve(path: Path):   Path = Path(toNioPath.resolve(path.toNioPath)).normalize
 
   def resolveSibling(name: String): Path = Path(toNioPath.resolveSibling(name))
-  def resolveSibling(path: Path): Path = Path(toNioPath.resolveSibling(path.toNioPath))
+  def resolveSibling(path: Path):   Path = Path(toNioPath.resolveSibling(path.toNioPath))
 
   def relativize(path: Path): Path = Path(toNioPath.relativize(path.toNioPath))
 
@@ -62,23 +62,23 @@ final class Path private (val toNioPath: JPath) extends PathApi {
 
   def extName: String = {
     val fn = fileName.toString
-    val i = fn.lastIndexOf('.')
+    val i  = fn.lastIndexOf('.')
     if (i == 0 | i == -1) "" else fn.substring(i)
   }
 
   def parent: Option[Path] = Option(toNioPath.getParent()).map(Path(_))
 
   def startsWith(path: String): Boolean = toNioPath.startsWith(path)
-  def startsWith(path: Path): Boolean = toNioPath.startsWith(path.toNioPath)
+  def startsWith(path: Path):   Boolean = toNioPath.startsWith(path.toNioPath)
 
   def endsWith(path: String): Boolean = toNioPath.endsWith(path)
-  def endsWith(path: Path): Boolean = toNioPath.endsWith(path.toNioPath)
+  def endsWith(path: Path):   Boolean = toNioPath.endsWith(path.toNioPath)
 
   override def toString = toNioPath.toString
 
   override def equals(that: Any) = that match {
     case p: Path => toNioPath == p.toNioPath
-    case _       => false
+    case _ => false
   }
 
   override def hashCode = toNioPath.hashCode
@@ -86,7 +86,7 @@ final class Path private (val toNioPath: JPath) extends PathApi {
 
 object Path extends PathCompanionApi {
   private def apply(path: JPath): Path = new Path(path)
-  def apply(path: String): Path = fromNioPath(FileSystems.getDefault.getPath(path))
-  def fromNioPath(path: JPath): Path = Path(path)
-  def fromFsPath(fs: FileSystem, path: String): Path = fromNioPath(fs.getPath(path))
+  def apply(path:         String): Path = fromNioPath(FileSystems.getDefault.getPath(path))
+  def fromNioPath(path:   JPath): Path = Path(path)
+  def fromFsPath(fs:      FileSystem, path: String): Path = fromNioPath(fs.getPath(path))
 }

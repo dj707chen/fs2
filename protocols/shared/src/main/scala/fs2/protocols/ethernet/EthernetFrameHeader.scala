@@ -33,11 +33,11 @@ import com.comcast.ip4s.MacAddress
 /** Header of an ethernet frame as captured in a pcap file.
   */
 case class EthernetFrameHeader(
-    destination: MacAddress,
-    source: MacAddress,
+    destination:       MacAddress,
+    source:            MacAddress,
     ethertypeOrLength: Int
 ) {
-  def length: Option[Int] = if (ethertypeOrLength <= 1500) Some(ethertypeOrLength) else None
+  def length:    Option[Int] = if (ethertypeOrLength <= 1500) Some(ethertypeOrLength) else None
   def ethertype: Option[Int] = if (ethertypeOrLength > 1500) Some(ethertypeOrLength) else None
 }
 

@@ -66,8 +66,8 @@ class CompressionBenchmark {
 
   private def benchmark(
       randomInput: Array[Byte],
-      zeroInput: Array[Byte],
-      pipe: Pipe[IO, Byte, Byte]
+      zeroInput:   Array[Byte],
+      pipe:        Pipe[IO, Byte, Byte]
   ): Byte =
     if (withRandomBytes) lastThrough(randomInput, pipe)
     else lastThrough(zeroInput, pipe)
@@ -95,7 +95,7 @@ class CompressionBenchmark {
 
 object CompressionBenchmark {
 
-  private val bytes: Int = 1024 * 1024
+  private val bytes:      Int = 1024 * 1024
   private val bufferSize: Int = 32 * 1024
 
   private val randomBytes: Array[Byte] = {

@@ -125,8 +125,8 @@ private[io] final class PipedStreamBuffer(private[this] val capacity: Int) { sel
       // This method needs to return the number of read bytes, or -1 if the read
       // was unsuccessful.
       var success = false
-      var res = 0
-      var cont = true
+      var res     = 0
+      var cont    = true
 
       while (cont) {
         self.synchronized {
@@ -135,7 +135,7 @@ private[io] final class PipedStreamBuffer(private[this] val capacity: Int) { sel
             val available = tail - head
             // Check whether the whole read request can be fulfilled right now,
             // or just a part of it.
-            val toRead = math.min(available, length)
+            val toRead    = math.min(available, length)
             // Transfer the bytes to the provided byte array.
             circularRead(buffer, head, capacity, b, offset, toRead)
             // The bytes are marked as read by advancing the head of the
@@ -204,10 +204,10 @@ private[io] final class PipedStreamBuffer(private[this] val capacity: Int) { sel
       * @param length the number of bytes to be transferred
       */
     private[this] def circularRead(
-        src: Array[Byte],
+        src:    Array[Byte],
         srcPos: Int,
         srcCap: Int,
-        dst: Array[Byte],
+        dst:    Array[Byte],
         dstPos: Int,
         length: Int
     ): Unit = {
@@ -297,7 +297,7 @@ private[io] final class PipedStreamBuffer(private[this] val capacity: Int) { sel
             val available = capacity - (tail - head)
             // Check whether the whole write request can be fulfilled right now,
             // or just a part of it.
-            val toWrite = math.min(available, length)
+            val toWrite   = math.min(available, length)
             // Transfer the bytes to the provided byte array.
             circularWrite(b, offset, buffer, tail, capacity, toWrite)
             // The bytes are marked as written by advancing the tail of the
@@ -357,9 +357,9 @@ private[io] final class PipedStreamBuffer(private[this] val capacity: Int) { sel
       * @param length the number of bytes to be transferred
       */
     private[this] def circularWrite(
-        src: Array[Byte],
+        src:    Array[Byte],
         srcPos: Int,
-        dst: Array[Byte],
+        dst:    Array[Byte],
         dstPos: Int,
         dstCap: Int,
         length: Int

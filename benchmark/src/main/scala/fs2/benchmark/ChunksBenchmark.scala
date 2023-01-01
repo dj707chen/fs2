@@ -39,9 +39,9 @@ class ChunksBenchmark {
     def create: Obj = Obj(true)
   }
 
-  var chunkSeq: Seq[Chunk[Obj]] = _
-  var flattened: Chunk[Obj] = _
-  var sizeHint: Int = _
+  var chunkSeq:  Seq[Chunk[Obj]] = _
+  var flattened: Chunk[Obj]      = _
+  var sizeHint:  Int             = _
 
   @Setup
   def setup() = {

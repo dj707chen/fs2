@@ -36,8 +36,8 @@ sealed trait ProgramStreamDescriptor extends KnownDescriptor
 
 case class Mpeg1Only(
     profileAndLevelIndication: Int,
-    chromaFormat: Int,
-    frameRateExtensionFlag: Boolean
+    chromaFormat:              Int,
+    frameRateExtensionFlag:    Boolean
 )
 object Mpeg1Only {
   implicit val codec: Codec[Mpeg1Only] = {
@@ -49,11 +49,11 @@ object Mpeg1Only {
 }
 case class VideoStreamDescriptor(
     multipleFrameRateFlag: Boolean,
-    frameRateCode: Int,
-    mpeg1OnlyFlag: Boolean,
-    constrainedParameter: Boolean,
-    stillPictureFlag: Boolean,
-    mpeg1Only: Option[Mpeg1Only]
+    frameRateCode:         Int,
+    mpeg1OnlyFlag:         Boolean,
+    constrainedParameter:  Boolean,
+    stillPictureFlag:      Boolean,
+    mpeg1Only:             Option[Mpeg1Only]
 ) extends TransportStreamDescriptor
     with ProgramStreamDescriptor
 
@@ -70,9 +70,9 @@ object VideoStreamDescriptor {
 }
 
 case class AudioStreamDescriptor(
-    freeFormatFlag: Boolean,
-    id: Boolean,
-    layer: Int,
+    freeFormatFlag:             Boolean,
+    id:                         Boolean,
+    layer:                      Int,
     variableRateAudioIndicator: Boolean
 ) extends TransportStreamDescriptor
     with ProgramStreamDescriptor
@@ -116,10 +116,10 @@ object HierarchyType {
   }
 }
 case class HierarchyDescriptor(
-    hierarchyType: HierarchyType,
-    hierarchyLayerIndex: Int,
+    hierarchyType:               HierarchyType,
+    hierarchyLayerIndex:         Int,
     hierarchyEmbeddedLayerIndex: Int,
-    hierarchyChannel: Int
+    hierarchyChannel:            Int
 ) extends TransportStreamDescriptor
     with ProgramStreamDescriptor
 object HierarchyDescriptor {
@@ -136,7 +136,7 @@ object HierarchyDescriptor {
 }
 
 case class RegistrationDescriptor(
-    formatIdentifier: ByteVector,
+    formatIdentifier:             ByteVector,
     additionalIdentificationInfo: ByteVector
 ) extends TransportStreamDescriptor
     with ProgramStreamDescriptor
@@ -166,9 +166,7 @@ object AlignmentType {
     }
   }
 }
-case class DataStreamAlignmentDescriptor(alignmentType: AlignmentType)
-    extends TransportStreamDescriptor
-    with ProgramStreamDescriptor
+case class DataStreamAlignmentDescriptor(alignmentType: AlignmentType) extends TransportStreamDescriptor with ProgramStreamDescriptor
 object DataStreamAlignmentDescriptor {
   val codec: Codec[DataStreamAlignmentDescriptor] = {
     "alignment_type" | Codec[AlignmentType]
@@ -176,8 +174,8 @@ object DataStreamAlignmentDescriptor {
 }
 
 case class TargetBackgroundGridDescriptor(
-    horizontalSize: Int,
-    verticalSize: Int,
+    horizontalSize:         Int,
+    verticalSize:           Int,
     aspectRatioInformation: Int
 ) extends TransportStreamDescriptor
     with ProgramStreamDescriptor
@@ -200,9 +198,7 @@ object VideoWindowDescriptor {
   }.as[VideoWindowDescriptor]
 }
 
-case class CADescriptor(caSystemId: Int, caPid: Pid, privateData: ByteVector)
-    extends TransportStreamDescriptor
-    with ProgramStreamDescriptor
+case class CADescriptor(caSystemId: Int, caPid: Pid, privateData: ByteVector) extends TransportStreamDescriptor with ProgramStreamDescriptor
 object CADescriptor {
   val codec: Codec[CADescriptor] = {
     ("CA_system_id" | uint16) :: reserved(3) :: ("CA_PID" | Codec[Pid]) :: bytes
@@ -238,9 +234,7 @@ object LanguageField {
   }.as[LanguageField]
 }
 
-case class Iso639LanguageDescriptor(languageFields: Vector[LanguageField])
-    extends TransportStreamDescriptor
-    with ProgramStreamDescriptor
+case class Iso639LanguageDescriptor(languageFields: Vector[LanguageField]) extends TransportStreamDescriptor with ProgramStreamDescriptor
 object Iso639LanguageDescriptor {
   val codec: Codec[Iso639LanguageDescriptor] =
     vector(Codec[LanguageField])
@@ -249,8 +243,8 @@ object Iso639LanguageDescriptor {
 
 case class SystemClockDescriptor(
     externalClockReferenceIndicator: Boolean,
-    clockAccuracyInteger: Int,
-    clockAccuracyExponent: Int
+    clockAccuracyInteger:            Int,
+    clockAccuracyExponent:           Int
 ) extends TransportStreamDescriptor
     with ProgramStreamDescriptor
 object SystemClockDescriptor {
@@ -264,7 +258,7 @@ object SystemClockDescriptor {
 }
 
 case class MultiplexBufferUtilizationDescriptor(
-    boundValidFlag: Boolean,
+    boundValidFlag:      Boolean,
     ltwOffsetLowerBound: Int,
     ltwOffsetUpperBound: Int
 ) extends TransportStreamDescriptor
@@ -295,18 +289,14 @@ object MaximumBitrateDescriptor {
   }.dropUnits.as[MaximumBitrateDescriptor]
 }
 
-case class PrivateDataIndicatorDescriptor(privateDataIndicator: ByteVector)
-    extends TransportStreamDescriptor
-    with ProgramStreamDescriptor
+case class PrivateDataIndicatorDescriptor(privateDataIndicator: ByteVector) extends TransportStreamDescriptor with ProgramStreamDescriptor
 object PrivateDataIndicatorDescriptor {
   val codec: Codec[PrivateDataIndicatorDescriptor] = {
     "private_data_indicator" | bytes(4)
   }.as[PrivateDataIndicatorDescriptor]
 }
 
-case class SmoothingBufferDescriptor(sbLeakRate: Int, sbSize: Int)
-    extends TransportStreamDescriptor
-    with ProgramStreamDescriptor
+case class SmoothingBufferDescriptor(sbLeakRate: Int, sbSize: Int) extends TransportStreamDescriptor with ProgramStreamDescriptor
 object SmoothingBufferDescriptor {
   val codec: Codec[SmoothingBufferDescriptor] = {
     ("reserved" | reserved(2)) ::
@@ -335,18 +325,14 @@ object IbpDescriptor {
   }.as[IbpDescriptor]
 }
 
-case class Mpeg4VideoDescriptor(mpeg4VisualProfileAndLevel: Byte)
-    extends TransportStreamDescriptor
-    with ProgramStreamDescriptor
+case class Mpeg4VideoDescriptor(mpeg4VisualProfileAndLevel: Byte) extends TransportStreamDescriptor with ProgramStreamDescriptor
 object Mpeg4VideoDescriptor {
   val codec: Codec[Mpeg4VideoDescriptor] = {
     "MPEG-4_visual_profile_and_level" | byte
   }.as[Mpeg4VideoDescriptor]
 }
 
-case class Mpeg4AudioDescriptor(mpeg4AudioProfileAndLevel: Byte)
-    extends TransportStreamDescriptor
-    with ProgramStreamDescriptor
+case class Mpeg4AudioDescriptor(mpeg4AudioProfileAndLevel: Byte) extends TransportStreamDescriptor with ProgramStreamDescriptor
 object Mpeg4AudioDescriptor {
   val codec: Codec[Mpeg4AudioDescriptor] = {
     "MPEG-4_audio_profile_and_level" | byte
@@ -378,45 +364,35 @@ object EsIdAndChannel {
       ("FlexMuxChannel" | uint8)
   }.as[EsIdAndChannel]
 }
-case class FmcDescriptor(channels: Vector[EsIdAndChannel])
-    extends TransportStreamDescriptor
-    with ProgramStreamDescriptor
+case class FmcDescriptor(channels: Vector[EsIdAndChannel]) extends TransportStreamDescriptor with ProgramStreamDescriptor
 object FmcDescriptor {
   val codec: Codec[FmcDescriptor] =
     vector(Codec[EsIdAndChannel])
       .as[FmcDescriptor]
 }
 
-case class ExternalEsIdDescriptor(esternalEsId: Int)
-    extends TransportStreamDescriptor
-    with ProgramStreamDescriptor
+case class ExternalEsIdDescriptor(esternalEsId: Int) extends TransportStreamDescriptor with ProgramStreamDescriptor
 object ExternalEsIdDescriptor {
   val codec: Codec[ExternalEsIdDescriptor] = {
     "External_ES_ID" | uint16
   }.as[ExternalEsIdDescriptor]
 }
 
-case class MuxCodeDescriptor(muxCodeTableEntry: ByteVector)
-    extends TransportStreamDescriptor
-    with ProgramStreamDescriptor
+case class MuxCodeDescriptor(muxCodeTableEntry: ByteVector) extends TransportStreamDescriptor with ProgramStreamDescriptor
 object MuxCodeDescriptor {
   val codec: Codec[MuxCodeDescriptor] =
     bytes
       .as[MuxCodeDescriptor]
 }
 
-case class FmxBufferSizeDescriptor(flexMuxBufferDescriptor: ByteVector)
-    extends TransportStreamDescriptor
-    with ProgramStreamDescriptor
+case class FmxBufferSizeDescriptor(flexMuxBufferDescriptor: ByteVector) extends TransportStreamDescriptor with ProgramStreamDescriptor
 object FmxBufferSizeDescriptor {
   val codec: Codec[FmxBufferSizeDescriptor] =
     bytes
       .as[FmxBufferSizeDescriptor]
 }
 
-case class MultiplexBufferDescriptor(mbBufferSize: Int, tbLeakRate: Int)
-    extends TransportStreamDescriptor
-    with ProgramStreamDescriptor
+case class MultiplexBufferDescriptor(mbBufferSize: Int, tbLeakRate: Int) extends TransportStreamDescriptor with ProgramStreamDescriptor
 object MultiplexBufferDescriptor {
   val codec: Codec[MultiplexBufferDescriptor] = {
     ("MB_buffer_size" | uint24) ::

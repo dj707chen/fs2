@@ -41,26 +41,26 @@ object SecureContext {
 
   /** @see [[https://nodejs.org/api/tls.html#tls_tls_createsecurecontext_options]] */
   def apply(
-      ca: Option[Seq[Either[Chunk[Byte], String]]] = None,
-      cert: Option[Seq[Either[Chunk[Byte], String]]] = None,
-      ciphers: Option[String] = None,
-      clientCertEngine: Option[String] = None,
-      crl: Option[Seq[Either[Chunk[Byte], String]]] = None,
-      dhparam: Option[Either[Chunk[Byte], String]] = None,
-      ecdhCurve: Option[String] = None,
-      honorCipherOrder: Option[Boolean] = None,
-      key: Option[Seq[Key]] = None,
-      maxVersion: Option[SecureVersion] = None,
-      minVersion: Option[SecureVersion] = None,
-      passphrase: Option[String] = None,
-      pfx: Option[Seq[Pfx]] = None,
-      privateKeyEngine: Option[String] = None,
+      ca:                   Option[Seq[Either[Chunk[Byte], String]]] = None,
+      cert:                 Option[Seq[Either[Chunk[Byte], String]]] = None,
+      ciphers:              Option[String] = None,
+      clientCertEngine:     Option[String] = None,
+      crl:                  Option[Seq[Either[Chunk[Byte], String]]] = None,
+      dhparam:              Option[Either[Chunk[Byte], String]] = None,
+      ecdhCurve:            Option[String] = None,
+      honorCipherOrder:     Option[Boolean] = None,
+      key:                  Option[Seq[Key]] = None,
+      maxVersion:           Option[SecureVersion] = None,
+      minVersion:           Option[SecureVersion] = None,
+      passphrase:           Option[String] = None,
+      pfx:                  Option[Seq[Pfx]] = None,
+      privateKeyEngine:     Option[String] = None,
       privateKeyIdentifier: Option[String] = None,
-      secureOptions: Option[Long] = None,
-      sessionIdContext: Option[String] = None,
-      sessionTimeout: Option[FiniteDuration] = None,
-      sigalgs: Option[String] = None,
-      ticketKeys: Option[Chunk[Byte]] = None
+      secureOptions:        Option[Long] = None,
+      sessionIdContext:     Option[String] = None,
+      sessionTimeout:       Option[FiniteDuration] = None,
+      sigalgs:              Option[String] = None,
+      ticketKeys:           Option[Chunk[Byte]] = None
   ): SecureContext = {
     val options = new facade.tls.SecureContextOptions {}
 

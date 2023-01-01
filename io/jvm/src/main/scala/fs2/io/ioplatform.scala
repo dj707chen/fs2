@@ -67,7 +67,7 @@ private[fs2] trait ioplatform extends iojvmnative {
   def readOutputStream[F[_]: Async](
       chunkSize: Int
   )(
-      f: OutputStream => F[Unit]
+      f:         OutputStream => F[Unit]
   ): Stream[F, Byte] = {
     val mkOutput: Resource[F, (OutputStream, InputStream)] =
       Resource.make(Sync[F].delay {
@@ -96,7 +96,7 @@ private[fs2] trait ioplatform extends iojvmnative {
             })
             .void
         )
-        val read = readInputStream(is.pure[F], chunkSize, closeAfterUse = false)
+        val read  = readInputStream(is.pure[F], chunkSize, closeAfterUse = false)
         read.concurrently(Stream.eval(write)) ++ Stream.eval(err.get).flatMap {
           case None    => Stream.empty
           case Some(t) => Stream.raiseError[F](t)

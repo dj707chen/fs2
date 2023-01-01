@@ -39,7 +39,7 @@ object InflateParams {
 
   def apply(
       bufferSize: Int = 1024 * 32,
-      header: ZLibParams.Header = ZLibParams.Header.ZLIB
+      header:     ZLibParams.Header = ZLibParams.Header.ZLIB
   ): InflateParams =
     InflateParamsImpl(bufferSize, header)
 
@@ -49,7 +49,7 @@ object InflateParams {
 
   private case class InflateParamsImpl(
       bufferSize: Int,
-      header: ZLibParams.Header
+      header:     ZLibParams.Header
   ) extends InflateParams
 
 }

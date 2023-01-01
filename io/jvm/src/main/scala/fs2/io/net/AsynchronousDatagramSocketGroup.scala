@@ -43,13 +43,13 @@ private[net] trait AsynchronousDatagramSocketGroup {
   type Context
   def register(channel: DatagramChannel): Context
   def read(
-      ctx: Context,
-      cb: Either[Throwable, Datagram] => Unit
+      ctx:              Context,
+      cb:               Either[Throwable, Datagram] => Unit
   ): () => Unit
   def write(
-      ctx: Context,
+      ctx:      Context,
       datagram: Datagram,
-      cb: Option[Throwable] => Unit
+      cb:       Option[Throwable] => Unit
   ): () => Unit
   def close(ctx: Context): Unit
   def close(): Unit
@@ -66,8 +66,7 @@ private[net] object AsynchronousDatagramSocketGroup {
     new AsynchronousDatagramSocketGroup {
       private class Attachment(
           readers: ArrayDeque[(Long, Either[Throwable, Datagram] => Unit)] = new ArrayDeque(),
-          writers: ArrayDeque[(Long, (WriterDatagram, Option[Throwable] => Unit))] =
-            new ArrayDeque()
+          writers: ArrayDeque[(Long, (WriterDatagram, Option[Throwable] => Unit))] = new ArrayDeque()
       ) {
         def hasReaders: Boolean = !readers.isEmpty
 
@@ -83,7 +82,7 @@ private[net] object AsynchronousDatagramSocketGroup {
           }
 
         def queueReader(
-            id: Long,
+            id:     Long,
             reader: Either[Throwable, Datagram] => Unit
         ): () => Unit =
           if (closed) {
@@ -114,7 +113,7 @@ private[net] object AsynchronousDatagramSocketGroup {
           }
 
         def queueWriter(
-            id: Long,
+            id:     Long,
             writer: (WriterDatagram, Option[Throwable] => Unit)
         ): () => Unit =
           if (closed) {
@@ -147,8 +146,8 @@ private[net] object AsynchronousDatagramSocketGroup {
 
       private val ids = new AtomicLong(Long.MinValue)
 
-      private val selector = Selector.open()
-      private val closeLock = new Object
+      private val selector         = Selector.open()
+      private val closeLock        = new Object
       @volatile private var closed = false
       private val pendingThunks: ConcurrentLinkedQueue[() => Unit] =
         new ConcurrentLinkedQueue()
@@ -170,9 +169,9 @@ private[net] object AsynchronousDatagramSocketGroup {
 
       override def read(
           key: SelectionKey,
-          cb: Either[Throwable, Datagram] => Unit
+          cb:  Either[Throwable, Datagram] => Unit
       ): () => Unit = {
-        val readerId = ids.getAndIncrement()
+        val readerId   = ids.getAndIncrement()
         val attachment = key.attachment.asInstanceOf[Attachment]
 
         onSelectorThread {
@@ -195,7 +194,7 @@ private[net] object AsynchronousDatagramSocketGroup {
 
       private def read1(
           channel: DatagramChannel,
-          reader: Either[Throwable, Datagram] => Unit
+          reader:  Either[Throwable, Datagram] => Unit
       ): Boolean =
         try {
           val src = channel.receive(readBuffer).asInstanceOf[InetSocketAddress]
@@ -217,11 +216,11 @@ private[net] object AsynchronousDatagramSocketGroup {
         }
 
       override def write(
-          key: SelectionKey,
+          key:      SelectionKey,
           datagram: Datagram,
-          cb: Option[Throwable] => Unit
+          cb:       Option[Throwable] => Unit
       ): () => Unit = {
-        val writerId = ids.getAndIncrement()
+        val writerId       = ids.getAndIncrement()
         val writerDatagram = {
           val bytes = {
             val srcBytes = datagram.bytes.toArraySlice
@@ -234,7 +233,7 @@ private[net] object AsynchronousDatagramSocketGroup {
           }
           new WriterDatagram(datagram.remote.toInetSocketAddress, ByteBuffer.wrap(bytes))
         }
-        val attachment = key.attachment.asInstanceOf[Attachment]
+        val attachment     = key.attachment.asInstanceOf[Attachment]
         onSelectorThread {
           val channel = key.channel.asInstanceOf[DatagramChannel]
           var cancelWriter: () => Unit = null
@@ -254,9 +253,9 @@ private[net] object AsynchronousDatagramSocketGroup {
       }
 
       private def write1(
-          channel: DatagramChannel,
+          channel:  DatagramChannel,
           datagram: WriterDatagram,
-          cb: Option[Throwable] => Unit
+          cb:       Option[Throwable] => Unit
       ): Boolean =
         try {
           val sent = channel.send(datagram.bytes, datagram.remote)
@@ -273,7 +272,7 @@ private[net] object AsynchronousDatagramSocketGroup {
 
       override def close(key: SelectionKey): Unit =
         onSelectorThread {
-          val channel = key.channel.asInstanceOf[DatagramChannel]
+          val channel    = key.channel.asInstanceOf[DatagramChannel]
           val attachment = key.attachment.asInstanceOf[Attachment]
           key.cancel()
           channel.close()
@@ -310,9 +309,9 @@ private[net] object AsynchronousDatagramSocketGroup {
               selector.select(0L)
               val selectedKeys = selector.selectedKeys.iterator
               while (selectedKeys.hasNext) {
-                val key = selectedKeys.next
+                val key        = selectedKeys.next
                 selectedKeys.remove
-                val channel = key.channel.asInstanceOf[DatagramChannel]
+                val channel    = key.channel.asInstanceOf[DatagramChannel]
                 val attachment = key.attachment.asInstanceOf[Attachment]
                 try
                   if (key.isValid) {

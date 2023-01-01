@@ -31,14 +31,14 @@ final class CopyFlag private (private val bits: Long) extends AnyVal {
 }
 
 object CopyFlag extends CopyFlagCompanionApi {
-  private def apply(bits: Long): CopyFlag = new CopyFlag(bits)
+  private def apply(bits: Long):   CopyFlag = new CopyFlag(bits)
   private def apply(bits: Double): CopyFlag = CopyFlag(bits.toLong)
 
   val ReplaceExisting = CopyFlag(
     facade.fs.constants.COPYFILE_EXCL
   ) // Reuse this bit with inverted semantics
-  val Reflink = CopyFlag(facade.fs.constants.COPYFILE_FICLONE)
-  val ReflinkOrFail = CopyFlag(facade.fs.constants.COPYFILE_FICLONE_FORCE)
+  val Reflink         = CopyFlag(facade.fs.constants.COPYFILE_FICLONE)
+  val ReflinkOrFail   = CopyFlag(facade.fs.constants.COPYFILE_FICLONE_FORCE)
 
   private[file] implicit val monoid: Monoid[CopyFlag] = new Monoid[CopyFlag] {
     override def combine(x: CopyFlag, y: CopyFlag): CopyFlag = CopyFlag(x.bits | y.bits)

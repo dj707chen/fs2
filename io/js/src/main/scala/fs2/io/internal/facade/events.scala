@@ -44,7 +44,7 @@ private[io] trait EventEmitter extends js.Object {
 
   protected[io] def removeListener(
       eventName: String,
-      listener: js.Function
+      listener:  js.Function
   ): this.type =
     js.native
 
@@ -58,8 +58,8 @@ private[io] object EventEmitter {
   implicit class ops(val eventTarget: EventEmitter) extends AnyVal {
 
     def registerListener[F[_], E](eventName: String, dispatcher: Dispatcher[F])(
-        listener: E => F[Unit]
-    )(implicit F: Sync[F]): Resource[F, Unit] = Resource
+        listener:                            E => F[Unit]
+    )(implicit F:                            Sync[F]): Resource[F, Unit] = Resource
       .make(F.delay {
         val fn: js.Function1[E, Unit] = e => dispatcher.unsafeRunAndForget(listener(e))
         eventTarget.on(eventName, fn)
@@ -68,8 +68,8 @@ private[io] object EventEmitter {
       .void
 
     def registerListener2[F[_], E, A](eventName: String, dispatcher: Dispatcher[F])(
-        listener: (E, A) => F[Unit]
-    )(implicit F: Sync[F]): Resource[F, Unit] = Resource
+        listener:                                (E, A) => F[Unit]
+    )(implicit F:                                Sync[F]): Resource[F, Unit] = Resource
       .make(F.delay {
         val fn: js.Function2[E, A, Unit] = (e, a) => dispatcher.unsafeRunAndForget(listener(e, a))
         eventTarget.on(eventName, fn)
@@ -78,8 +78,8 @@ private[io] object EventEmitter {
       .void
 
     def registerOneTimeListener[F[_], E](eventName: String)(
-        listener: E => Unit
-    )(implicit F: Sync[F]): F[Option[F[Unit]]] = F.delay {
+        listener:                                   E => Unit
+    )(implicit F:                                   Sync[F]): F[Option[F[Unit]]] = F.delay {
       val fn: js.Function1[E, Unit] = listener(_)
       eventTarget.once(eventName, fn)
       Some(F.delay(eventTarget.removeListener(eventName, fn)))

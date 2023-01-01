@@ -37,12 +37,11 @@ private[net] trait DatagramSocketGroupCompanionPlatform {
   def unsafe[F[_]: Async](adsg: AsynchronousDatagramSocketGroup): DatagramSocketGroup[F] =
     new AsyncDatagramSocketGroup(adsg)
 
-  private final class AsyncDatagramSocketGroup[F[_]: Async](adsg: AsynchronousDatagramSocketGroup)
-      extends DatagramSocketGroup[F] {
+  private final class AsyncDatagramSocketGroup[F[_]: Async](adsg: AsynchronousDatagramSocketGroup) extends DatagramSocketGroup[F] {
     def openDatagramSocket(
-        address: Option[Host],
-        port: Option[Port],
-        options: List[SocketOption],
+        address:        Option[Host],
+        port:           Option[Port],
+        options:        List[SocketOption],
         protocolFamily: Option[ProtocolFamily]
     ): Resource[F, DatagramSocket[F]] =
       Resource.eval(address.traverse(_.resolve[F])).flatMap { addr =>
@@ -101,7 +100,7 @@ private[net] trait DatagramSocketGroupCompanionPlatform {
           def close: F[Unit] = Async[F].delay(adsg.close(ctx))
 
           def join(
-              join: MulticastJoin[IpAddress],
+              join:      MulticastJoin[IpAddress],
               interface: NetworkInterface
           ): F[GroupMembership] =
             Async[F].delay {
@@ -110,12 +109,12 @@ private[net] trait DatagramSocketGroupCompanionPlatform {
                 j => channel.join(j.group.address.toInetAddress, interface, j.source.toInetAddress)
               )
               new GroupMembership {
-                def drop = Async[F].delay(membership.drop)
-                def block(source: IpAddress) =
+                def drop                       = Async[F].delay(membership.drop)
+                def block(source: IpAddress)   =
                   Async[F].delay { membership.block(source.toInetAddress); () }
                 def unblock(source: IpAddress) =
                   Async[F].delay { membership.unblock(source.toInetAddress); () }
-                override def toString = "GroupMembership"
+                override def toString          = "GroupMembership"
               }
             }
 

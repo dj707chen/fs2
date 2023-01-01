@@ -31,9 +31,9 @@ import scala.scalanative.unsafe._
 import scala.scalanative.unsigned._
 
 private[io] final class ResizableBuffer[F[_]] private (
-    private var ptr: Ptr[Byte],
+    private var ptr:        Ptr[Byte],
     private[this] var size: Int
-)(implicit F: Sync[F]) {
+)(implicit F:               Sync[F]) {
 
   def get(size: Int): F[Ptr[Byte]] = F.delay {
     if (size <= this.size)

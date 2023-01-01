@@ -22,11 +22,7 @@
 package fs2.io.net.unixsocket
 
 import cats.effect.kernel.Async
-import jnr.unixsocket.{
-  UnixServerSocketChannel,
-  UnixSocketAddress => JnrUnixSocketAddress,
-  UnixSocketChannel
-}
+import jnr.unixsocket.{UnixServerSocketChannel, UnixSocketAddress => JnrUnixSocketAddress, UnixSocketChannel}
 
 object JnrUnixSockets {
 
@@ -42,15 +38,14 @@ object JnrUnixSockets {
     new JnrUnixSocketsImpl[F]
 }
 
-private[unixsocket] class JnrUnixSocketsImpl[F[_]](implicit F: Async[F])
-    extends UnixSockets.AsyncUnixSockets[F] {
+private[unixsocket] class JnrUnixSocketsImpl[F[_]](implicit F: Async[F]) extends UnixSockets.AsyncUnixSockets[F] {
   protected def openChannel(address: UnixSocketAddress) =
     F.delay(UnixSocketChannel.open(new JnrUnixSocketAddress(address.path)))
 
   protected def openServerChannel(address: UnixSocketAddress) = F.blocking {
     val serverChannel = UnixServerSocketChannel.open()
     serverChannel.configureBlocking(false)
-    val sock = serverChannel.socket()
+    val sock          = serverChannel.socket()
     sock.bind(new JnrUnixSocketAddress(address.path))
     (F.blocking(serverChannel.accept()), F.blocking(serverChannel.close()))
   }

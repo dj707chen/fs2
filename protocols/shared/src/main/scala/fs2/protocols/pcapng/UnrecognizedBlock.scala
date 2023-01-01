@@ -26,8 +26,7 @@ import scodec.Codec
 import scodec.bits._
 import scodec.codecs._
 
-case class UnrecognizedBlock(blockType: ByteVector, length: Length, bytes: ByteVector)
-    extends BodyBlock
+case class UnrecognizedBlock(blockType: ByteVector, length: Length, bytes: ByteVector) extends BodyBlock
 
 object UnrecognizedBlock {
 

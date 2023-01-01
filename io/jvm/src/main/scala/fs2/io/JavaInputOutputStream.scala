@@ -46,12 +46,12 @@ private[io] object JavaInputOutputStream {
   private final case class Ready(rem: Option[Chunk.ArraySlice[Byte]]) extends DownStreamState
 
   def toInputStream[F[_]](
-      source: Stream[F, Byte]
+      source:   Stream[F, Byte]
   )(implicit F: Async[F]): Resource[F, InputStream] = {
     def markUpstreamDone(
-        queue: Queue[F, Either[Option[Throwable], Chunk.ArraySlice[Byte]]],
+        queue:   Queue[F, Either[Option[Throwable], Chunk.ArraySlice[Byte]]],
         upState: SignallingRef[F, UpStreamState],
-        result: Option[Throwable]
+        result:  Option[Throwable]
     ): F[Unit] =
       upState.set(UpStreamState(done = true, err = result)) >> queue.offer(Left(result))
 
@@ -62,8 +62,8 @@ private[io] object JavaInputOutputStream {
      * Emits only once, but runs in background until either source is exhausted or `interruptWhenTrue` yields to true
      */
     def processInput(
-        source: Stream[F, Byte],
-        queue: Queue[F, Either[Option[Throwable], Chunk.ArraySlice[Byte]]],
+        source:  Stream[F, Byte],
+        queue:   Queue[F, Either[Option[Throwable], Chunk.ArraySlice[Byte]]],
         upState: SignallingRef[F, UpStreamState],
         dnState: SignallingRef[F, DownStreamState]
     ): F[Unit] =
@@ -83,10 +83,10 @@ private[io] object JavaInputOutputStream {
         .void
 
     def readOnce(
-        dest: Array[Byte],
-        off: Int,
-        len: Int,
-        queue: Queue[F, Either[Option[Throwable], Chunk.ArraySlice[Byte]]],
+        dest:    Array[Byte],
+        off:     Int,
+        len:     Int,
+        queue:   Queue[F, Either[Option[Throwable], Chunk.ArraySlice[Byte]]],
         dnState: SignallingRef[F, DownStreamState]
     ): F[Int] = {
       // in case current state has any data available from previous read
@@ -94,9 +94,9 @@ private[io] object JavaInputOutputStream {
       // won't modify state if the data cannot be acquired
       def tryGetChunk(s: DownStreamState): (DownStreamState, Option[Chunk.ArraySlice[Byte]]) =
         s match {
-          case Done(None)    => s -> None
-          case Done(Some(_)) => s -> None
-          case Ready(None)   => s -> None
+          case Done(None)         => s -> None
+          case Done(Some(_))      => s -> None
+          case Ready(None)        => s -> None
           case Ready(Some(bytes)) =>
             val cloned = Chunk.ArraySlice(bytes.toArray)
             if (bytes.size <= len) Ready(None) -> Some(cloned)
@@ -121,15 +121,15 @@ private[io] object JavaInputOutputStream {
               Array.copy(bytes.values, bytes.offset, dest, off, bytes.size)
               bytes.size
             }
-          case None =>
+          case None        =>
             n match {
-              case Done(None) => -1.pure[F]
+              case Done(None)      => -1.pure[F]
               case Done(Some(err)) =>
                 F.raiseError[Int](new IOException("Stream is in failed state", err))
-              case _ =>
+              case _               =>
                 // Ready is guaranteed at this time to be empty
                 queue.take.flatMap {
-                  case Left(None) =>
+                  case Left(None)      =>
                     dnState
                       .update(setDone(None))
                       .as(-1) // update we are done, next read won't succeed
@@ -137,7 +137,7 @@ private[io] object JavaInputOutputStream {
                     dnState.update(setDone(err.some)) >> F.raiseError[Int](
                       new IOException("UpStream failed", err)
                     )
-                  case Right(bytes) =>
+                  case Right(bytes)    =>
                     val (copy, maybeKeep) =
                       if (bytes.size <= len) bytes -> None
                       else {
@@ -149,7 +149,7 @@ private[io] object JavaInputOutputStream {
                     } >> (maybeKeep match {
                       case Some(rem) if rem.size > 0 =>
                         dnState.set(Ready(rem.some)).as(copy.size)
-                      case _ => copy.size.pure[F]
+                      case _                         => copy.size.pure[F]
                     })
                 }
             }

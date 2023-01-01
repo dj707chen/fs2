@@ -64,8 +64,8 @@ sealed abstract class Watcher[F[_]] {
     * @return unregistration task
     */
   def watch(
-      path: Path,
-      types: Seq[Watcher.EventType] = Nil,
+      path:      Path,
+      types:     Seq[Watcher.EventType] = Nil,
       modifiers: Seq[WatchEvent.Modifier] = Nil
   ): F[F[Unit]]
 
@@ -85,8 +85,8 @@ sealed abstract class Watcher[F[_]] {
     * @return unregistration task
     */
   def register(
-      path: Path,
-      types: Seq[Watcher.EventType] = Nil,
+      path:      Path,
+      types:     Seq[Watcher.EventType] = Nil,
       modifiers: Seq[WatchEvent.Modifier] = Nil
   ): F[F[Unit]]
 
@@ -148,10 +148,10 @@ object Watcher {
     /** Determines the path for which the supplied event references. */
     private[Watcher] def pathOf(event: Event): Option[JPath] =
       event match {
-        case Event.Created(p, _)  => Some(p.toNioPath)
-        case Event.Deleted(p, _)  => Some(p.toNioPath)
-        case Event.Modified(p, _) => Some(p.toNioPath)
-        case Event.Overflow(_)    => None
+        case Event.Created(p, _)                       => Some(p.toNioPath)
+        case Event.Deleted(p, _)                       => Some(p.toNioPath)
+        case Event.Modified(p, _)                      => Some(p.toNioPath)
+        case Event.Overflow(_)                         => None
         case Event.NonStandard(e, registeredDirectory) =>
           if (e.context.isInstanceOf[JPath])
             Some(registeredDirectory.toNioPath.resolve(e.context.asInstanceOf[JPath]))
@@ -167,44 +167,44 @@ object Watcher {
 
   /** Creates a watcher for the supplied file system. */
   def fromFileSystem[F[_]](
-      fs: FileSystem
+      fs:       FileSystem
   )(implicit F: Async[F]): Resource[F, Watcher[F]] =
     Resource(F.blocking(fs.newWatchService).flatMap { ws =>
       fromWatchService(ws).map(w => w -> F.blocking(ws.close))
     })
 
   private case class Registration[F[_]](
-      path: JPath,
-      singleFile: Boolean,
-      key: WatchKey,
-      types: Seq[EventType],
-      modifiers: Seq[WatchEvent.Modifier],
-      recurse: Boolean,
+      path:            JPath,
+      singleFile:      Boolean,
+      key:             WatchKey,
+      types:           Seq[EventType],
+      modifiers:       Seq[WatchEvent.Modifier],
+      recurse:         Boolean,
       suppressCreated: Boolean,
-      cleanup: F[Unit]
+      cleanup:         F[Unit]
   )
 
   /** Creates a watcher for the supplied NIO `WatchService`. */
   def fromWatchService[F[_]](
-      ws: WatchService
+      ws:       WatchService
   )(implicit F: Async[F]): F[Watcher[F]] =
     Ref
       .of[F, List[Registration[F]]](Nil)
       .map(new DefaultWatcher(ws, _))
 
   private class DefaultWatcher[F[_]](
-      ws: WatchService,
+      ws:            WatchService,
       registrations: Ref[F, List[Registration[F]]]
   )(implicit
-      F: Async[F]
+      F:             Async[F]
   ) extends Watcher[F] {
     private def track(r: Registration[F]): F[F[Unit]] =
       registrations
         .update(rs => r :: rs)
         .as {
           registrations.modify { s =>
-            val filtered = s.filterNot(_ == r)
-            val cleanup = if (s.contains(r)) r.cleanup else F.unit
+            val filtered  = s.filterNot(_ == r)
+            val cleanup   = if (s.contains(r)) r.cleanup else F.unit
             val cancelKey =
               if (filtered.forall(_.key != r.key)) F.blocking(r.key.cancel) else F.unit
             filtered -> (cancelKey *> cleanup)
@@ -212,8 +212,8 @@ object Watcher {
         }
 
     override def watch(
-        path: Path,
-        types: Seq[Watcher.EventType] = Nil,
+        path:      Path,
+        types:     Seq[Watcher.EventType] = Nil,
         modifiers: Seq[WatchEvent.Modifier] = Nil
     ): F[F[Unit]] =
       Files[F].isDirectory(path).flatMap { dir =>
@@ -222,8 +222,8 @@ object Watcher {
       }
 
     private def watchDirectory(
-        path: Path,
-        types: Seq[EventType],
+        path:      Path,
+        types:     Seq[EventType],
         modifiers: Seq[WatchEvent.Modifier]
     ): F[F[Unit]] = {
       val (supplementedTypes, suppressCreated) =
@@ -268,8 +268,8 @@ object Watcher {
     }
 
     private def watchFile(
-        path: Path,
-        types: Seq[Watcher.EventType],
+        path:      Path,
+        types:     Seq[Watcher.EventType],
         modifiers: Seq[WatchEvent.Modifier]
     ): F[F[Unit]] =
       registerUntracked(path.toNioPath.getParent, types, modifiers).flatMap(key =>
@@ -288,8 +288,8 @@ object Watcher {
       )
 
     override def register(
-        path: Path,
-        types: Seq[Watcher.EventType],
+        path:      Path,
+        types:     Seq[Watcher.EventType],
         modifiers: Seq[WatchEvent.Modifier]
     ): F[F[Unit]] =
       registerUntracked(path.toNioPath, types, modifiers).flatMap(key =>
@@ -297,8 +297,8 @@ object Watcher {
       )
 
     private def registerUntracked(
-        path: JPath,
-        types: Seq[Watcher.EventType],
+        path:      JPath,
+        types:     Seq[Watcher.EventType],
         modifiers: Seq[WatchEvent.Modifier]
     ): F[WatchKey] =
       F.blocking {
@@ -306,62 +306,61 @@ object Watcher {
           if (types.isEmpty)
             List(EventType.Created, EventType.Deleted, EventType.Modified, EventType.Overflow)
           else types
-        val kinds = typesWithDefaults.map(EventType.toWatchEventKind)
+        val kinds             = typesWithDefaults.map(EventType.toWatchEventKind)
         path.register(ws, kinds.toArray, modifiers: _*)
       }
 
     override def events(pollTimeout: FiniteDuration): Stream[F, Event] =
-      unfilteredEvents(pollTimeout).evalMap(e => registrations.get.map((e, _))).flatMap {
-        case ((key, events), registrations) =>
-          val regs = registrations.filter(_.key == key)
-          val filteredEvents = events.filter { e =>
-            regs.exists { reg =>
-              val singleFileMatch = reg.singleFile && Event.pathOf(e) == Some(reg.path)
-              val dirMatch =
-                !reg.singleFile && !(e.isInstanceOf[Event.Created] && reg.suppressCreated)
-              singleFileMatch || dirMatch
-            }
+      unfilteredEvents(pollTimeout).evalMap(e => registrations.get.map((e, _))).flatMap { case ((key, events), registrations) =>
+        val regs           = registrations.filter(_.key == key)
+        val filteredEvents = events.filter { e =>
+          regs.exists { reg =>
+            val singleFileMatch = reg.singleFile && Event.pathOf(e) == Some(reg.path)
+            val dirMatch        =
+              !reg.singleFile && !(e.isInstanceOf[Event.Created] && reg.suppressCreated)
+            singleFileMatch || dirMatch
           }
-          val recurse: Stream[F, Event] =
-            if (regs.exists(_.recurse)) {
-              val created = events.collect { case Event.Created(p, _) => p }
-              def watchIfDirectory(p: Path): F[(F[Unit], List[Event])] =
-                Files[F]
-                  .isDirectory(p)
-                  .ifM(
-                    watch(
-                      p,
-                      Seq(EventType.Created),
-                      regs.headOption.map(_.modifiers).getOrElse(Nil)
-                    ).flatMap { cancel =>
-                      val events: F[List[Event]] = F.blocking {
-                        var evs: List[Event.Created] = Nil
-                        JFiles
-                          .list(p.toNioPath)
-                          .forEach(d => evs = Event.Created(Path.fromNioPath(d), 1) :: evs)
-                        evs
-                      }
-                      events.map(cancel -> _)
-                    },
-                    F.pure(F.unit -> List.empty[Event])
-                  )
-              val subregisters: F[List[Event]] =
-                created.traverse(watchIfDirectory).flatMap { x =>
-                  val (cancels, events) = x.separate
-                  val updateRegistration: F[Unit] = this.registrations.update { m =>
-                    val idx = m.indexWhere(_.key == key)
-                    if (idx >= 0) {
-                      val existing = m(idx)
-                      val cancelAll: F[Unit] = cancels.sequence.void
-                      m.updated(idx, existing.copy(cleanup = existing.cleanup >> cancelAll))
-                    } else m
-                  }.void
-                  updateRegistration.as(events.flatten)
-                }
-              Stream.eval(subregisters).flatMap(Stream.emits(_))
-            } else Stream.empty
-          recurse ++ (if (filteredEvents.isEmpty) Stream.empty
-                      else Stream.emits(filteredEvents))
+        }
+        val recurse: Stream[F, Event] =
+          if (regs.exists(_.recurse)) {
+            val created = events.collect { case Event.Created(p, _) => p }
+            def watchIfDirectory(p: Path): F[(F[Unit], List[Event])] =
+              Files[F]
+                .isDirectory(p)
+                .ifM(
+                  watch(
+                    p,
+                    Seq(EventType.Created),
+                    regs.headOption.map(_.modifiers).getOrElse(Nil)
+                  ).flatMap { cancel =>
+                    val events: F[List[Event]] = F.blocking {
+                      var evs: List[Event.Created] = Nil
+                      JFiles
+                        .list(p.toNioPath)
+                        .forEach(d => evs = Event.Created(Path.fromNioPath(d), 1) :: evs)
+                      evs
+                    }
+                    events.map(cancel -> _)
+                  },
+                  F.pure(F.unit -> List.empty[Event])
+                )
+            val subregisters:              F[List[Event]]            =
+              created.traverse(watchIfDirectory).flatMap { x =>
+                val (cancels, events) = x.separate
+                val updateRegistration: F[Unit] = this.registrations.update { m =>
+                  val idx = m.indexWhere(_.key == key)
+                  if (idx >= 0) {
+                    val existing = m(idx)
+                    val cancelAll: F[Unit] = cancels.sequence.void
+                    m.updated(idx, existing.copy(cleanup = existing.cleanup >> cancelAll))
+                  } else m
+                }.void
+                updateRegistration.as(events.flatten)
+              }
+            Stream.eval(subregisters).flatMap(Stream.emits(_))
+          } else Stream.empty
+        recurse ++ (if (filteredEvents.isEmpty) Stream.empty
+                    else Stream.emits(filteredEvents))
       }
 
     private def unfilteredEvents(
@@ -371,7 +370,7 @@ object Watcher {
         val key = ws.poll(pollTimeout.toMillis, TimeUnit.MILLISECONDS)
         if (key eq null) None
         else {
-          val events = key.pollEvents.asScala.toList
+          val events  = key.pollEvents.asScala.toList
           key.reset
           val keyPath = key.watchable.asInstanceOf[JPath]
           Some(key -> events.map(evt => Event.fromWatchEvent(evt, keyPath)))

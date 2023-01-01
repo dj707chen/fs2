@@ -30,7 +30,7 @@ import scodec.bits._
 import scodec.codecs._
 
 class SectionCodec private (
-    cases: Map[Int, List[SectionCodec.Case[Any, Section]]],
+    cases:     Map[Int, List[SectionCodec.Case[Any, Section]]],
     verifyCrc: Boolean = true
 ) extends Codec[Section] {
   import SectionCodec._
@@ -47,18 +47,18 @@ class SectionCodec private (
   def encode(section: Section) = {
     def tryEncode(c: SectionCodec.Case[Any, Section]) = {
       val (privateBits, extension, data) = c.fromSection(section)
-      val preHeader = SectionHeader(section.tableId, extension.isDefined, privateBits, 0)
+      val preHeader                      = SectionHeader(section.tableId, extension.isDefined, privateBits, 0)
       for {
-        encData <- extension match {
-          case None => c.codec(preHeader, verifyCrc).encode(data)
-          case Some(ext) =>
-            for {
-              encExt <- Codec[SectionExtension].encode(ext)
-              encData <- c.codec(preHeader, verifyCrc).encode(data)
-            } yield encExt ++ encData
-        }
+        encData   <- extension match {
+                       case None      => c.codec(preHeader, verifyCrc).encode(data)
+                       case Some(ext) =>
+                         for {
+                           encExt  <- Codec[SectionExtension].encode(ext)
+                           encData <- c.codec(preHeader, verifyCrc).encode(data)
+                         } yield encExt ++ encData
+                     }
         includeCrc = extension.isDefined
-        size = (encData.size / 8).toInt + (if (includeCrc) 4 else 0)
+        size       = (encData.size / 8).toInt + (if (includeCrc) 4 else 0)
         postHeader = preHeader.copy(length = size)
         encHeader <- Codec[SectionHeader].encode(postHeader)
         withoutCrc = encHeader ++ encData
@@ -66,18 +66,18 @@ class SectionCodec private (
     }
 
     for {
-      cs <- Attempt.fromOption(
-        cases.get(section.tableId),
-        Err(s"unsupported table id ${section.tableId}")
-      )
+      cs  <- Attempt.fromOption(
+               cases.get(section.tableId),
+               Err(s"unsupported table id ${section.tableId}")
+             )
       enc <- cs.dropRight(1).foldRight(tryEncode(cs.last)) { (next, res) =>
-        res.orElse(tryEncode(next))
-      }
+               res.orElse(tryEncode(next))
+             }
     } yield enc
   }
 
   def decode(bits: BitVector) = (for {
-    header <- Codec[SectionHeader]
+    header  <- Codec[SectionHeader]
     section <- Decoder(decodeSection(header)(_))
   } yield section).decode(bits)
 
@@ -98,11 +98,11 @@ class SectionCodec private (
     def decodeExtended(
         c: SectionCodec.Case[Any, Section]
     ): Decoder[(Option[SectionExtension], Any)] = for {
-      ext <- Codec[SectionExtension]
-      data <- fixedSizeBytes(header.length.toLong - 9, c.codec(header, verifyCrc))
-      actualCrc <- int32
+      ext        <- Codec[SectionExtension]
+      data       <- fixedSizeBytes(header.length.toLong - 9, c.codec(header, verifyCrc))
+      actualCrc  <- int32
       expectedCrc = if (verifyCrc) generateCrc else actualCrc
-      _ <- Decoder.liftAttempt(ensureCrcMatches(actualCrc, expectedCrc))
+      _          <- Decoder.liftAttempt(ensureCrcMatches(actualCrc, expectedCrc))
     } yield Some(ext) -> data
 
     def decodeStandard(
@@ -112,9 +112,9 @@ class SectionCodec private (
     } yield None -> data
 
     def attemptDecode(c: SectionCodec.Case[Any, Section]): Attempt[DecodeResult[Section]] = for {
-      result <- (if (header.extendedSyntax) decodeExtended(c) else decodeStandard(c)).decode(bits)
+      result                              <- (if (header.extendedSyntax) decodeExtended(c) else decodeStandard(c)).decode(bits)
       DecodeResult((ext, data), remainder) = result
-      section <- c.toSection(header.privateBits, ext, data)
+      section                             <- c.toSection(header.privateBits, ext, data)
     } yield DecodeResult(section, remainder)
 
     val cs = cases.getOrElse(
@@ -138,19 +138,18 @@ object SectionCodec {
       .supporting[ConditionalAccessSection]
 
   sealed trait UnknownSection extends Section
-  case class UnknownNonExtendedSection(tableId: Int, privateBits: BitVector, data: ByteVector)
-      extends UnknownSection
+  case class UnknownNonExtendedSection(tableId: Int, privateBits: BitVector, data: ByteVector) extends UnknownSection
   case class UnknownExtendedSection(
-      tableId: Int,
+      tableId:     Int,
       privateBits: BitVector,
-      extension: SectionExtension,
-      data: ByteVector
+      extension:   SectionExtension,
+      data:        ByteVector
   ) extends UnknownSection
       with ExtendedSection
 
   private case class Case[A, B <: Section](
-      codec: (SectionHeader, Boolean) => Codec[A],
-      toSection: (BitVector, Option[SectionExtension], A) => Attempt[B],
+      codec:       (SectionHeader, Boolean) => Codec[A],
+      toSection:   (BitVector, Option[SectionExtension], A) => Attempt[B],
       fromSection: B => (BitVector, Option[SectionExtension], A)
   )
 
@@ -158,8 +157,7 @@ object SectionCodec {
     def fromSectionFragmentCodec[A <: Section](c: SectionFragmentCodec[A]): Case[Any, Section] =
       Case[Any, Section](
         (hdr, verifyCrc) => c.subCodec(hdr, verifyCrc).asInstanceOf[Codec[Any]],
-        (privateBits, extension, data) =>
-          c.toSection(privateBits, extension, data.asInstanceOf[c.Repr]),
+        (privateBits, extension, data) => c.toSection(privateBits, extension, data.asInstanceOf[c.Repr]),
         section => c.fromSection(section.asInstanceOf[A])
       )
   }
